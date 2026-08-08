@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-syne: 'Syne', sans-serif;
+  --font-dm-sans: 'DM Sans', sans-serif;
+  --font-jetbrains: 'JetBrains Mono', monospace;
+
+  /* Semantic color tokens */
+  --color-bg-0: #040710;
+  --color-bg-1: #080D18;
+  --color-bg-2: #0D1422;
+  --color-bg-3: #12192C;
+  --color-border-dim: #182133;
+  --color-border-base: #1E2B42;
+  --color-text-primary: #E4ECF7;
+  --color-text-secondary: #7D8FA8;
+  --color-text-muted: #475A72;
+  --color-accent: #17CDD8;
+
+  /* Subject color accents (HSL values for opacity control) */
+  --subject-0: 217 91% 60%;   /* Blue — AI */
+  --subject-1: 160 84% 39%;   /* Emerald — DS */
+  --subject-2: 38 92% 50%;    /* Amber — Algorithms */
+  --subject-3: 0 84% 60%;     /* Red — ML */
+  --subject-4: 263 70% 64%;   /* Violet — DB */
+  --subject-5: 25 95% 53%;    /* Orange — OS */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-bg-0);
+  color: var(--color-text-primary);
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  min-height: 100dvh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-1);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-base);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-bright, #263650);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-2) 0%,
+    var(--color-bg-3) 50%,
+    var(--color-bg-2) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 6px;
+}
+
+/* Stagger animation delays for list items */
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+.stagger-6 { animation-delay: 300ms; }
+
+/* Glow border on hover */
+.glow-border {
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+.glow-border:hover {
+  box-shadow: 0 0 0 1px rgba(23, 205, 216, 0.35), 0 4px 20px rgba(0,0,0,0.5);
+}
+
+/* Dot grid background texture */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(23, 205, 216, 0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Theory / Lab pill base styles */
+.pill-theory {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93C5FD;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.pill-lab {
+  background: rgba(139, 92, 246, 0.15);
+  color: #C4B5FD;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
