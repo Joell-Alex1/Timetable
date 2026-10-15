@@ -11,14 +11,38 @@ Orchestrates the full scheduling pipeline:
 """
 
 from __future__ import annotations
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
 
 from csp.model import Session, Value, CSPModel
 from csp.backtracking import solve
-from data.rooms import CR_ROOMS, CL_ROOMS, ALL_ROOMS, get_floor
-from data.timeslots import DAYS, SLOT_TIMES, NUM_SLOTS
+from data.rooms import CR_ROOMS, CL_ROOMS, get_floor
+from data.timeslots import DAYS, SLOT_TIMES
 from data.sample_data import SUBJECTS
 from scheduler.constraints import build_constraint_graph
+
+
+# ── 0. Scheduling resources ───────────────────────────────────────────────────
+
+@dataclass
+class Resources:
+    """Rooms, days and time slots the solver may use (defaults = built-in data)."""
+    cr_rooms:   List[str] = field(default_factory=lambda: list(CR_ROOMS))
+    cl_rooms:   List[str] = field(default_factory=lambda: list(CL_ROOMS))
+    days:       List[str] = field(default_factory=lambda: list(DAYS))
+    slot_times: List[str] = field(default_factory=lambda: list(SLOT_TIMES))
+
+    @property
+    def all_rooms(self) -> List[str]:
+        return self.cr_rooms + self.cl_rooms
+
+    @property
+    def num_slots(self) -> int:
+        return len(self.slot_times)
+
+    @property
+    def floors(self) -> List[int]:
+        return sorted({get_floor(r) for r in self.all_rooms})
 
 
 # ── 1. Session builder ────────────────────────────────────────────────────────
@@ -77,7 +101,7 @@ def build_sessions(subjects: List[Dict] = None) -> List[Session]:
 
 # ── 2. Domain builder ─────────────────────────────────────────────────────────
 
-def build_domains(sessions: List[Session]) -> Dict[str, List[Value]]:
+def build_domains(sessions: List[Session], res: Optional[Resources] = None) -> Dict[str, List[Value]]:
     """
     Generate all valid (day, start_slot, room) combinations for each session.
 
@@ -86,7 +110,7 @@ def build_domains(sessions: List[Session]) -> Dict[str, List[Value]]:
       - Lab    sessions → CL rooms only
 
     Consecutive-slot enforcement (hard constraint 4):
-      - Lab sessions: start_slot ≤ NUM_SLOTS − duration
+      - Lab sessions: start_slot ≤ num_slots − duration
         (ensures slot+1 is also valid within the day)
 
     Args:
@@ -95,15 +119,16 @@ def build_domains(sessions: List[Session]) -> Dict[str, List[Value]]:
     Returns:
         Dict mapping session_id → List[Value].
     """
+    res = res or Resources()
     domains: Dict[str, List[Value]] = {}
 
     for session in sessions:
         if session.session_type == "Theory":
-            rooms = CR_ROOMS
-            max_start = NUM_SLOTS                       # slots 0–7
+            rooms = res.cr_rooms
+            max_start = res.num_slots                          # every slot
         else:
-            rooms = CL_ROOMS
-            max_start = NUM_SLOTS - session.duration + 1  # slots 0–6 for 2-hr labs
+            rooms = res.cl_rooms
+            max_start = res.num_slots - session.duration + 1  # leave room for the 2nd hour
 
         # Rooms interleaved by room-number within floor: (num, floor) sort key.
         # e.g. CR401, CR501, CR601, CR701, CR801, CR402, CR502, ...
@@ -118,7 +143,7 @@ def build_domains(sessions: List[Session]) -> Dict[str, List[Value]]:
         values: List[Value] = [
             Value(day=day, start_slot=slot, room=room)
             for slot in range(max_start)
-            for day in DAYS
+            for day in res.days
             for room in rooms_interleaved
         ]
         domains[session.id] = values
@@ -128,7 +153,7 @@ def build_domains(sessions: List[Session]) -> Dict[str, List[Value]]:
 
 # ── 3. CSP assembler ──────────────────────────────────────────────────────────
 
-def setup_csp(subjects: List[Dict] = None) -> tuple:
+def setup_csp(subjects: List[Dict] = None, res: Optional[Resources] = None) -> tuple:
     """
     Build the complete CSPModel ready for the solver.
 
@@ -142,7 +167,7 @@ def setup_csp(subjects: List[Dict] = None) -> tuple:
         Tuple (csp, sessions_map) where sessions_map is {id: Session}.
     """
     sessions = build_sessions(subjects)
-    domains  = build_domains(sessions)
+    domains  = build_domains(sessions, res)
 
     csp = CSPModel()
     for session in sessions:
@@ -156,12 +181,13 @@ def setup_csp(subjects: List[Dict] = None) -> tuple:
 
 # ── 4. Schedule runner ────────────────────────────────────────────────────────
 
-def create_schedule(subjects: List[Dict] = None) -> Dict[str, Any]:
+def create_schedule(subjects: List[Dict] = None, res: Optional[Resources] = None) -> Dict[str, Any]:
     """
     Run the full CSP scheduling pipeline and return the result dict.
 
     Args:
         subjects : Optional custom subject list; defaults to SUBJECTS.
+        res      : Optional rooms/days/slots; defaults to the built-in data.
 
     Returns:
         A dict matching the required JSON output format with keys:
@@ -169,12 +195,13 @@ def create_schedule(subjects: List[Dict] = None) -> Dict[str, Any]:
     """
     if subjects is None:
         subjects = SUBJECTS
+    res = res or Resources()
 
-    csp, sessions_map = setup_csp(subjects)
+    csp, sessions_map = setup_csp(subjects, res)
     success = solve(csp, sessions_map)
 
     if success:
-        return format_timetable(csp.assignment, sessions_map)
+        return format_timetable(csp.assignment, sessions_map, res)
 
     # ── Failure response ──────────────────────────────────────────────────────
     return {
@@ -186,9 +213,9 @@ def create_schedule(subjects: List[Dict] = None) -> Dict[str, Any]:
         "timetable": {},
         "room_summary": {
             f"floor_{f}": {"theory": [], "lab": []}
-            for f in range(4, 9)
+            for f in res.floors
         },
-        "unused_rooms": ALL_ROOMS,
+        "unused_rooms": res.all_rooms,
         "stats": {
             "total_sessions_scheduled": 0,
             "floors_used": [],
@@ -202,6 +229,7 @@ def create_schedule(subjects: List[Dict] = None) -> Dict[str, Any]:
 def format_timetable(
     assignment: Dict[str, Value],
     sessions_map: Dict[str, Session],
+    res: Optional[Resources] = None,
 ) -> Dict[str, Any]:
     """
     Convert a completed CSP assignment into the structured API response.
@@ -217,9 +245,10 @@ def format_timetable(
         Full response dict (status, timetable, room_summary, unused_rooms, stats).
     """
     # ── Build nested timetable structure ─────────────────────────────────────
+    res = res or Resources()
     timetable: Dict[str, Dict[str, List[Dict]]] = {
-        day: {slot: [] for slot in SLOT_TIMES}
-        for day in DAYS
+        day: {slot: [] for slot in res.slot_times}
+        for day in res.days
     }
     used_rooms: set = set()
 
@@ -229,7 +258,7 @@ def format_timetable(
 
         # Add an entry for every occupied slot (important for 2-hr labs)
         for offset in range(session.duration):
-            slot_time = SLOT_TIMES[value.start_slot + offset]
+            slot_time = res.slot_times[value.start_slot + offset]
             timetable[value.day][slot_time].append({
                 "subject":    session.subject,
                 "room":       value.room,
@@ -253,14 +282,14 @@ def format_timetable(
 
     # ── Room summary by floor ─────────────────────────────────────────────────
     room_summary: Dict[str, Dict[str, List[str]]] = {}
-    for floor in range(4, 9):
+    for floor in res.floors:
         floor_key = f"floor_{floor}"
-        used_theory = [r for r in CR_ROOMS if get_floor(r) == floor and r in used_rooms]
-        used_lab    = [r for r in CL_ROOMS if get_floor(r) == floor and r in used_rooms]
+        used_theory = [r for r in res.cr_rooms if get_floor(r) == floor and r in used_rooms]
+        used_lab    = [r for r in res.cl_rooms if get_floor(r) == floor and r in used_rooms]
         room_summary[floor_key] = {"theory": used_theory, "lab": used_lab}
 
     # ── Unused rooms ──────────────────────────────────────────────────────────
-    unused_rooms = [r for r in ALL_ROOMS if r not in used_rooms]
+    unused_rooms = [r for r in res.all_rooms if r not in used_rooms]
 
     # ── Stats ─────────────────────────────────────────────────────────────────
     floors_used = sorted({get_floor(r) for r in used_rooms})

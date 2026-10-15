@@ -24,3 +24,7 @@ Thumbs.db
 
 # Generated output
 smart_scheduler/timetable.json
+
+# Secrets
+.env
+smart_scheduler/.env

@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CalendarDays, Building2, BookOpen, LayoutDashboard } from 'lucide-react'
+import { CalendarDays, Building2, BookOpen, LayoutDashboard, DoorOpen } from 'lucide-react'
 
 const NAV_LINKS = [
   { href: '/',          label: 'Dashboard', icon: LayoutDashboard },
   { href: '/schedule',  label: 'Timetable',  icon: CalendarDays },
   { href: '/floors',    label: 'Floors',     icon: Building2 },
   { href: '/subjects',  label: 'Subjects',   icon: BookOpen },
+  { href: '/resources', label: 'Rooms & Timings', icon: DoorOpen },
 ]
 
 export default function Navbar() {
