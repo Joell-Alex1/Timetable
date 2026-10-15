@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown, Building2 } from 'lucide-react'
 
-const FLOORS = [4, 5, 6, 7, 8]
+const SKELETON_ROWS = 5
 
 // Build room usage map from timetable
 function buildRoomOccupancy(timetable) {
@@ -86,11 +86,8 @@ function RoomCard({ room, occupancy }) {
   )
 }
 
-function FloorAccordion({ floor, roomSummary, occupancy }) {
-  const [open, setOpen] = useState(floor === 4)
-
-  const crRooms = Array.from({ length: 8 }, (_, i) => `CR${floor}0${i + 1}`)
-  const clRooms = Array.from({ length: 4 }, (_, i) => `CL${floor}0${i + 1}`)
+function FloorAccordion({ floor, crRooms, clRooms, defaultOpen, roomSummary, occupancy }) {
+  const [open, setOpen] = useState(defaultOpen)
 
   const usedTheory = (roomSummary?.[`floor_${floor}`]?.theory ?? []).length
   const usedLab    = (roomSummary?.[`floor_${floor}`]?.lab    ?? []).length
@@ -116,7 +113,7 @@ function FloorAccordion({ floor, roomSummary, occupancy }) {
           <div className="text-left">
             <p className="font-display text-sm font-700 text-text-primary">Floor {floor}</p>
             <p className="text-xs text-text-muted">
-              {usedTheory}/8 theory rooms · {usedLab}/4 lab rooms
+              {usedTheory}/{crRooms.length} theory rooms · {usedLab}/{clRooms.length} lab rooms
             </p>
           </div>
         </div>
@@ -146,7 +143,7 @@ function FloorAccordion({ floor, roomSummary, occupancy }) {
           {/* Theory rooms */}
           <div className="mb-6">
             <p className="mb-3 text-[10px] font-600 uppercase tracking-widest text-text-muted">
-              Theory Rooms (CR) — {usedTheory}/8 in use
+              Theory Rooms (CR) — {usedTheory}/{crRooms.length} in use
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
               {crRooms.map((r) => (
@@ -158,7 +155,7 @@ function FloorAccordion({ floor, roomSummary, occupancy }) {
           {/* Lab rooms */}
           <div>
             <p className="mb-3 text-[10px] font-600 uppercase tracking-widest text-text-muted">
-              Lab Rooms (CL) — {usedLab}/4 in use
+              Lab Rooms (CL) — {usedLab}/{clRooms.length} in use
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {clRooms.map((r) => (
@@ -176,17 +173,26 @@ function FloorAccordion({ floor, roomSummary, occupancy }) {
 function FloorMapSkeleton() {
   return (
     <div className="flex flex-col gap-3" role="status" aria-label="Loading floor map">
-      {FLOORS.map((f) => (
-        <div key={f} className="skeleton h-16 rounded-xl" />
+      {Array.from({ length: SKELETON_ROWS }, (_, i) => (
+        <div key={i} className="skeleton h-16 rounded-xl" />
       ))}
     </div>
   )
 }
 
-export default function FloorMap({ timetable, roomSummary, loading = false }) {
+export default function FloorMap({ timetable, roomSummary, rooms = [], loading = false }) {
   if (loading) return <FloorMapSkeleton />
 
   const occupancy = buildRoomOccupancy(timetable)
+  const floors = [...new Set(rooms.map((r) => r.floor))].sort((a, b) => a - b)
+
+  if (floors.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-border-base p-8 text-center text-sm text-text-muted">
+        No rooms configured yet. Add some on the Rooms &amp; Timings page.
+      </p>
+    )
+  }
 
   return (
     <div
@@ -194,10 +200,13 @@ export default function FloorMap({ timetable, roomSummary, loading = false }) {
       role="region"
       aria-label="Floor-wise room map"
     >
-      {FLOORS.map((floor) => (
+      {floors.map((floor, i) => (
         <FloorAccordion
           key={floor}
           floor={floor}
+          defaultOpen={i === 0}
+          crRooms={rooms.filter((r) => r.floor === floor && r.type === 'CR').map((r) => r.name)}
+          clRooms={rooms.filter((r) => r.floor === floor && r.type === 'CL').map((r) => r.name)}
           roomSummary={roomSummary}
           occupancy={occupancy}
         />

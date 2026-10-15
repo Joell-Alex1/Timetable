@@ -34,6 +34,7 @@ ai+proj/
 
 - **Python** 3.10+ (project uses `from __future__ import annotations` and `dict | None` syntax)
 - **Node.js** 18+ and npm
+- **MySQL** 8.0 running locally (all data is stored there)
 
 ## Setup
 
@@ -45,6 +46,17 @@ python -m venv .venv
 .venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 ```
+
+### 1b. Database (MySQL)
+
+```bash
+copy .env.example .env        # then edit .env and set DB_PASSWORD
+```
+
+On first start the API creates the `smart_scheduler` database and its tables, then seeds
+them with the built-in subjects, rooms (floors 4-8), days and time slots. After that the
+database is the source of truth: anything added through the UI or API is kept across restarts.
+`.env` is git-ignored.
 
 ### 2. Frontend (Node)
 
@@ -120,6 +132,13 @@ ReDoc: http://localhost:8000/redoc
 |---|---|---|
 | POST | `/schedule` | Run the CSP solver; returns the full timetable |
 | GET | `/timetable` | Return the most recently generated timetable |
+| GET | `/timetables` | History of saved schedule runs |
+| GET | `/timetables/{id}` | One saved run |
+| GET / POST | `/rooms` | List / add a room (`CR###` theory, `CL###` lab) |
+| DELETE | `/rooms/{name}` | Remove a room |
+| GET | `/timings` | Days and time slots |
+| POST / DELETE | `/timings/days[/{name}]` | Add / remove a day |
+| POST / DELETE | `/timings/slots[/{label}]` | Add / remove a time slot |
 | GET | `/rooms/summary` | Floor-wise room allocation from the last schedule |
 | GET | `/rooms/unused` | Rooms not used in the last schedule |
 | GET | `/subjects` | List all subjects with hour requirements |

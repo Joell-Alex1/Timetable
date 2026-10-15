@@ -60,3 +60,43 @@ export async function addSubject(name, theory_hours, lab_hours, batch) {
 export async function deleteSubject(name) {
   return request(`/subjects/${encodeURIComponent(name)}`, { method: 'DELETE' })
 }
+
+/** GET /rooms — Every room (name, type CR/CL, floor). */
+export async function getRooms() {
+  return request('/rooms')
+}
+
+/** POST /rooms — Add a room, e.g. "CR901" (theory) or "CL902" (lab). */
+export async function addRoom(name) {
+  return request('/rooms', { method: 'POST', body: JSON.stringify({ name }) })
+}
+
+/** DELETE /rooms/{name} — Remove a room. */
+export async function deleteRoom(name) {
+  return request(`/rooms/${encodeURIComponent(name)}`, { method: 'DELETE' })
+}
+
+/** GET /timings — { days: string[], slots: string[] }. */
+export async function getTimings() {
+  return request('/timings')
+}
+
+/** POST /timings/days — Add a day. */
+export async function addDay(name) {
+  return request('/timings/days', { method: 'POST', body: JSON.stringify({ name }) })
+}
+
+/** DELETE /timings/days/{name} — Remove a day. */
+export async function deleteDay(name) {
+  return request(`/timings/days/${encodeURIComponent(name)}`, { method: 'DELETE' })
+}
+
+/** POST /timings/slots — Add a time slot (appended after the last one). */
+export async function addSlot(label) {
+  return request('/timings/slots', { method: 'POST', body: JSON.stringify({ label }) })
+}
+
+/** DELETE /timings/slots/{label} — Remove a time slot. */
+export async function deleteSlot(label) {
+  return request(`/timings/slots/${encodeURIComponent(label)}`, { method: 'DELETE' })
+}

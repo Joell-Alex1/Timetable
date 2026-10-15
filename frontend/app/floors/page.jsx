@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
 import Navbar from '../../components/Navbar'
 import FloorMap from '../../components/FloorMap'
-import { getTimetable, getRoomSummary } from '../../lib/api'
+import { getTimetable, getRoomSummary, getRooms } from '../../lib/api'
 
 export default function FloorsPage() {
   const router = useRouter()
   const [timetable, setTimetable]       = useState(null)
   const [roomSummary, setRoomSummary]   = useState(null)
+  const [rooms, setRooms]               = useState([])
   const [loading, setLoading]           = useState(true)
   const [error, setError]               = useState(null)
 
@@ -18,10 +19,12 @@ export default function FloorsPage() {
     setLoading(true)
     setError(null)
     try {
-      const [tt, rs] = await Promise.all([
+      const [tt, rs, rm] = await Promise.all([
         getTimetable().catch((err) => { if (err.message?.startsWith('HTTP 404')) return null; throw err }),
         getRoomSummary().catch((err) => { if (err.message?.startsWith('HTTP 404')) return null; throw err }),
+        getRooms(),
       ])
+      setRooms(rm.rooms)
       setTimetable(tt?.timetable ?? null)
       setRoomSummary(rs?.room_summary ?? null)
     } catch (err) {
@@ -66,7 +69,7 @@ export default function FloorsPage() {
               <h1 className="font-display text-2xl font-800 text-text-primary">Floor Map</h1>
               <p className="text-sm text-text-muted">
                 {totalUsed !== null
-                  ? `${totalUsed} rooms in use across floors 4–8`
+                  ? `${totalUsed} of ${rooms.length} rooms in use`
                   : 'Room utilisation by floor'}
               </p>
             </div>
@@ -121,7 +124,7 @@ export default function FloorsPage() {
           </div>
         )}
 
-        <FloorMap timetable={timetable} roomSummary={roomSummary} loading={loading} />
+        <FloorMap timetable={timetable} roomSummary={roomSummary} rooms={rooms} loading={loading} />
       </main>
     </div>
   )
