@@ -98,10 +98,20 @@ class RoomIn(BaseModel):
 
 class DayIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=20)
+    position: int | None = Field(
+        None, ge=0,
+        description="Insert at this 0-based position; appended when omitted. "
+                    "Lets an undo restore a deleted day to its original place.",
+    )
 
 
 class SlotIn(BaseModel):
     label: str = Field(..., min_length=1, max_length=20, description="Slot label, e.g. '17:00'")
+    position: int | None = Field(
+        None, ge=0,
+        description="Insert at this 0-based position; appended when omitted. "
+                    "Slot order is significant — labs need two adjacent slots.",
+    )
 
 
 def _commit_or_409(session: Session, message: str) -> None:
@@ -144,11 +154,86 @@ def run_schedule(session: Session = Depends(db_session)) -> Dict[str, Any]:
         raise HTTPException(status_code=422, detail="Cannot schedule: " + ", ".join(problems) + ".")
 
     result = create_schedule(subjects=subjects, res=res)
+
+    # Record what the solver was given, not just what it produced. Without this
+    # snapshot the UI cannot tell that subjects/rooms/timings have been edited
+    # since this timetable was generated, and silently presents a stale
+    # schedule as current.
+    result["inputs"] = {
+        "subjects": subjects,
+        "days": list(res.days),
+        "slots": list(res.slot_times),
+        "rooms": sorted(res.all_rooms),
+    }
+
     repo.save_timetable(session, result)
 
     if result["status"] == "failure":
         return JSONResponse(status_code=422, content=result)
     return result
+
+
+def _describe_changes(saved: Dict[str, Any], current: Dict[str, Any]) -> list[str]:
+    """
+    Human-readable differences between the inputs a timetable was built from
+    and the inputs as they stand now. Empty list = the timetable is current.
+    """
+    changes: list[str] = []
+
+    def names(entries: Any) -> set:
+        # subjects are dicts; days/slots/rooms are plain strings
+        return {e["name"] if isinstance(e, dict) else e for e in (entries or [])}
+
+    for key, label in (("subjects", "subject"), ("rooms", "room"),
+                       ("days", "day"), ("slots", "time slot")):
+        was, now = names(saved.get(key)), names(current.get(key))
+        for added in sorted(now - was):
+            changes.append(f"{label.capitalize()} '{added}' was added")
+        for removed in sorted(was - now):
+            changes.append(f"{label.capitalize()} '{removed}' was removed")
+
+    # Hour changes on a subject that exists in both snapshots
+    was_subjects = {s["name"]: s for s in (saved.get("subjects") or [])}
+    for subject in current.get("subjects") or []:
+        before = was_subjects.get(subject["name"])
+        if before and (before["theory_hours"] != subject["theory_hours"]
+                       or before["lab_hours"] != subject["lab_hours"]):
+            changes.append(f"Subject '{subject['name']}' had its hours changed")
+
+    return changes
+
+
+@app.get("/schedule/status", summary="Is the saved timetable still up to date?")
+def schedule_status(session: Session = Depends(db_session)) -> Dict[str, Any]:
+    """
+    Report whether the stored timetable still reflects the current subjects,
+    rooms, days and slots — so the UI can prompt for a regenerate instead of
+    presenting a stale schedule as if it were current.
+    """
+    result = repo.latest_timetable(session)
+    if result is None:
+        return {"has_timetable": False, "stale": False, "changes": []}
+
+    res = _load_resources(session)
+    current = {
+        "subjects": repo.list_subjects(session),
+        "days": res.days,
+        "slots": res.slot_times,
+        "rooms": sorted(res.all_rooms),
+    }
+
+    saved = result.get("inputs")
+    if saved is None:
+        # Generated before input tracking existed — can't prove it is current.
+        return {
+            "has_timetable": True,
+            "stale": True,
+            "changes": ["This timetable was generated before change tracking "
+                        "was added, so it may not reflect the current data."],
+        }
+
+    changes = _describe_changes(saved, current)
+    return {"has_timetable": True, "stale": bool(changes), "changes": changes}
 
 
 @app.get("/timetable", summary="Return the last successful timetable")
@@ -220,6 +305,20 @@ def delete_room(name: str, session: Session = Depends(db_session)) -> Dict[str, 
 
 # ── Timings (days + slots) ────────────────────────────────────────────────────
 
+def _insert_position(requested: int | None, append_at: int, shift, session: Session) -> int:
+    """
+    Resolve where a new day/slot goes.
+
+    Omitted position → append (the original behaviour). A requested position
+    makes room by shifting everything from that point down, so an undo can put
+    a deleted entry back where it was instead of at the end.
+    """
+    if requested is None or requested >= append_at:
+        return append_at
+    shift(session, requested)
+    return requested
+
+
 def _timings(session: Session) -> Dict[str, Any]:
     return {"days": repo.list_days(session), "slots": repo.list_slots(session)}
 
@@ -236,7 +335,8 @@ def add_day(body: DayIn, session: Session = Depends(db_session)) -> Dict[str, An
         raise HTTPException(status_code=422, detail="Day name is required.")
     if repo.find_day(session, name):
         raise HTTPException(status_code=409, detail=f"Day '{name}' already exists.")
-    session.add(DayRow(name=name, position=repo.next_day_position(session)))
+    session.add(DayRow(name=name, position=_insert_position(
+        body.position, repo.next_day_position(session), repo.shift_days_from, session)))
     _commit_or_409(session, f"Day '{name}' already exists.")
     return _timings(session)
 
@@ -246,9 +346,10 @@ def delete_day(name: str, session: Session = Depends(db_session)) -> Dict[str, A
     row = repo.find_day(session, name)
     if row is None:
         raise HTTPException(status_code=404, detail=f"Day '{name}' not found.")
+    deleted = {"name": row.name, "position": row.position}  # capture before delete, for undo
     session.delete(row)
     session.flush()
-    return {"deleted": row.name, **_timings(session)}
+    return {"deleted": deleted["name"], "restore": deleted, **_timings(session)}
 
 
 @app.post("/timings/slots", summary="Add a time slot", status_code=201)
@@ -258,7 +359,8 @@ def add_slot(body: SlotIn, session: Session = Depends(db_session)) -> Dict[str, 
         raise HTTPException(status_code=422, detail="Slot label is required.")
     if repo.find_slot(session, label):
         raise HTTPException(status_code=409, detail=f"Slot '{label}' already exists.")
-    session.add(TimeSlotRow(label=label, position=repo.next_slot_position(session)))
+    session.add(TimeSlotRow(label=label, position=_insert_position(
+        body.position, repo.next_slot_position(session), repo.shift_slots_from, session)))
     _commit_or_409(session, f"Slot '{label}' already exists.")
     return _timings(session)
 
@@ -268,9 +370,10 @@ def delete_slot(label: str, session: Session = Depends(db_session)) -> Dict[str,
     row = repo.find_slot(session, label)
     if row is None:
         raise HTTPException(status_code=404, detail=f"Slot '{label}' not found.")
+    deleted = {"label": row.label, "position": row.position}  # capture before delete, for undo
     session.delete(row)
     session.flush()
-    return {"deleted": row.label, **_timings(session)}
+    return {"deleted": deleted["label"], "restore": deleted, **_timings(session)}
 
 
 # ── Subjects ──────────────────────────────────────────────────────────────────
@@ -297,9 +400,11 @@ def delete_subject(name: str, session: Session = Depends(db_session)) -> Dict[st
     row = repo.find_subject(session, name)
     if row is None:
         raise HTTPException(status_code=404, detail=f"Subject '{name}' not found.")
+    deleted = row.as_dict()   # full record, so an undo can re-create it exactly
     session.delete(row)
     session.flush()
-    return {"deleted": row.name, "subjects": repo.list_subjects(session)}
+    return {"deleted": deleted["name"], "restore": deleted,
+            "subjects": repo.list_subjects(session)}
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

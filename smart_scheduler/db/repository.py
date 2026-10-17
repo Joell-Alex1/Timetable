@@ -46,6 +46,13 @@ def next_day_position(s: Session) -> int:
     return 0 if last is None else last + 1
 
 
+def shift_days_from(s: Session, position: int) -> None:
+    """Make room at `position` by pushing that day and everything after it down."""
+    for row in s.scalars(select(DayRow).where(DayRow.position >= position)):
+        row.position += 1
+    s.flush()
+
+
 def list_slots(s: Session) -> List[str]:
     return list(s.scalars(select(TimeSlotRow.label).order_by(TimeSlotRow.position)))
 
@@ -57,6 +64,13 @@ def find_slot(s: Session, label: str) -> Optional[TimeSlotRow]:
 def next_slot_position(s: Session) -> int:
     last = s.scalar(select(TimeSlotRow.position).order_by(TimeSlotRow.position.desc()).limit(1))
     return 0 if last is None else last + 1
+
+
+def shift_slots_from(s: Session, position: int) -> None:
+    """Make room at `position` by pushing that slot and everything after it down."""
+    for row in s.scalars(select(TimeSlotRow).where(TimeSlotRow.position >= position)):
+        row.position += 1
+    s.flush()
 
 
 # ── Saved timetables ─────────────────────────────────────────────────────────

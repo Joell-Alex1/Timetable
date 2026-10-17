@@ -3,21 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --font-syne: 'Syne', sans-serif;
-  --font-dm-sans: 'DM Sans', sans-serif;
+  --font-inter: 'Inter', system-ui, sans-serif;
   --font-jetbrains: 'JetBrains Mono', monospace;
 
   /* Semantic color tokens */
-  --color-bg-0: #040710;
-  --color-bg-1: #080D18;
-  --color-bg-2: #0D1422;
-  --color-bg-3: #12192C;
-  --color-border-dim: #182133;
-  --color-border-base: #1E2B42;
-  --color-text-primary: #E4ECF7;
-  --color-text-secondary: #7D8FA8;
-  --color-text-muted: #475A72;
-  --color-accent: #17CDD8;
+  --color-bg-0: #F9FAFB;
+  --color-bg-1: #FFFFFF;
+  --color-bg-2: #FFFFFF;
+  --color-bg-3: #F3F4F6;
+  --color-border-dim: #E5E7EB;
+  --color-border-base: #D8DFE8;
+  /* Keep in sync with tailwind.config.js — these vars style globals.css
+     itself (body, scrollbar, skeleton); the `text-text-*` utility classes
+     come from the Tailwind theme. All three clear WCAG AA on every surface. */
+  --color-text-primary: #0F1729;
+  --color-text-secondary: #475569;
+  --color-text-muted: #646C7A;
+  --color-accent: #2461DB;
+
+  /* Semantic status colours — red error, green success, amber warning, blue info */
+  --color-danger: #CC1F1F;
+  --color-success: #15803D;
+  --color-warning: #B45309;
+  --color-info: #1D4ED8;
 
   /* Subject color accents (HSL values for opacity control) */
   --subject-0: 217 91% 60%;   /* Blue — AI */
@@ -41,7 +49,7 @@ html {
 body {
   background-color: var(--color-bg-0);
   color: var(--color-text-primary);
-  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
   min-height: 100dvh;
 }
 
@@ -54,11 +62,11 @@ body {
   background: var(--color-bg-1);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-base);
+  background: #CBD5E1;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-bright, #263650);
+  background: var(--color-border-bright, #B6C1D1);
 }
 
 /* Focus ring */
@@ -77,13 +85,26 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    var(--color-bg-2) 0%,
-    var(--color-bg-3) 50%,
-    var(--color-bg-2) 100%
+    #EEF1F5 0%,
+    #F7F9FB 50%,
+    #EEF1F5 100%
   );
   background-size: 800px 100%;
   animation: shimmer 1.5s infinite linear;
   border-radius: 6px;
+}
+
+/* Indeterminate progress bar.
+   The solver runs synchronously inside one request, so there is no real
+   percentage to report. A sweeping bar signals "still working" honestly,
+   rather than inventing a progress figure the backend cannot supply. */
+@keyframes indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.progress-indeterminate {
+  animation: indeterminate 1.4s ease-in-out infinite;
 }
 
 /* Stagger animation delays for list items */
@@ -99,26 +120,26 @@ body {
   transition: box-shadow 200ms ease, border-color 200ms ease;
 }
 .glow-border:hover {
-  box-shadow: 0 0 0 1px rgba(23, 205, 216, 0.35), 0 4px 20px rgba(0,0,0,0.5);
+  box-shadow: 0 0 0 1px rgba(36, 97, 219, 0.25), 0 18px 34px -18px rgba(15, 23, 41, 0.22);
 }
 
 /* Dot grid background texture */
 .dot-grid {
-  background-image: radial-gradient(circle, rgba(23, 205, 216, 0.08) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(15, 23, 41, 0.06) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
 /* Theory / Lab pill base styles */
 .pill-theory {
-  background: rgba(59, 130, 246, 0.15);
-  color: #93C5FD;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: #D6E2F3;
+  color: #1E3A8A;
+  border: 1px solid #B8CDEA;
 }
 
 .pill-lab {
-  background: rgba(139, 92, 246, 0.15);
-  color: #C4B5FD;
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: #E2D7EF;
+  color: #5B21B6;
+  border: 1px solid #CBB9E2;
 }
 
 /* Reduced motion */

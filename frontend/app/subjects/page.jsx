@@ -1,14 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, RefreshCw, BarChart2, Plus, Trash2, X } from 'lucide-react'
+import { RefreshCw, BarChart2, Plus, Trash2, X } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartTooltip,
   ResponsiveContainer, Legend,
 } from 'recharts'
 import Navbar from '../../components/Navbar'
 import SubjectCard from '../../components/SubjectCard'
+import PageHeader from '../../components/PageHeader'
+import Button from '../../components/Button'
+import Field from '../../components/Field'
+import StaleBanner from '../../components/StaleBanner'
+import { useToast } from '../../components/ToastProvider'
 import { getTimetable, getSubjects, addSubject, deleteSubject } from '../../lib/api'
 
 /** Derive per-subject scheduled hours from a timetable */
@@ -62,6 +66,38 @@ function SubjectsSkeleton() {
 }
 
 /** Add Subject inline form */
+/**
+ * Validate the whole form on every keystroke.
+ *
+ * Returns { field: message }. Running this continuously (rather than only on
+ * submit) lets each field show its own problem next to it as soon as the user
+ * has touched it — Shneiderman 5 (prevent errors) and Nielsen 9, instead of a
+ * single message appearing at the bottom after the form is already wrong.
+ */
+function validateSubject({ name, batch, theory, lab }) {
+  const errors = {}
+  const theoryNum = parseInt(theory, 10)
+  const labNum    = parseInt(lab, 10)
+
+  if (!name.trim())  errors.name  = 'Give the subject a name.'
+  if (!batch.trim()) errors.batch = 'Which batch takes this subject?'
+
+  if (theory === '' || isNaN(theoryNum) || theoryNum < 0) {
+    errors.theory = 'Enter 0 or more hours.'
+  }
+  if (lab === '' || isNaN(labNum) || labNum < 0) {
+    errors.lab = 'Enter 0 or more hours.'
+  } else if (labNum % 2 !== 0) {
+    errors.lab = `Use an even number — ${labNum - 1 > 0 ? labNum - 1 : 2} or ${labNum + 1}, since each lab is 2 hours.`
+  }
+
+  if (!errors.theory && !errors.lab && theoryNum === 0 && labNum === 0) {
+    errors.theory = 'A subject needs at least one theory or lab hour.'
+  }
+
+  return errors
+}
+
 function AddSubjectForm({ onAdd, onCancel }) {
   const [name, setName]           = useState('')
   const [theory, setTheory]       = useState('')
@@ -69,25 +105,31 @@ function AddSubjectForm({ onAdd, onCancel }) {
   const [batch, setBatch]         = useState('')
   const [saving, setSaving]       = useState(false)
   const [formError, setFormError] = useState(null)
+  // Show a field's error only once the user has engaged with it, so the form
+  // does not open covered in red before anything has been typed.
+  const [touched, setTouched]     = useState({})
+
+  const errors = validateSubject({ name, batch, theory, lab })
+  const isValid = Object.keys(errors).length === 0
+  const show = (field) => (touched[field] ? errors[field] : undefined)
+  const markTouched = (field) => setTouched((t) => ({ ...t, [field]: true }))
 
   async function handleSubmit(e) {
     e.preventDefault()
     setFormError(null)
 
-    const theoryNum = parseInt(theory, 10)
-    const labNum    = parseInt(lab, 10)
-
-    if (!name.trim())                      return setFormError('Subject name is required.')
-    if (!batch.trim())                     return setFormError('Batch / stream is required.')
-    if (isNaN(theoryNum) || theoryNum < 0) return setFormError('Theory hours must be 0 or more.')
-    if (isNaN(labNum)    || labNum < 0)    return setFormError('Lab hours must be 0 or more.')
-    if (labNum % 2 !== 0)                  return setFormError('Lab hours must be even (sessions are 2 hrs each).')
-    if (theoryNum === 0 && labNum === 0)   return setFormError('A subject needs at least 1 theory or lab hour.')
+    if (!isValid) {
+      // Reveal every outstanding problem at once rather than one at a time.
+      setTouched({ name: true, batch: true, theory: true, lab: true })
+      return
+    }
 
     setSaving(true)
     try {
-      const result = await addSubject(name.trim(), theoryNum, labNum, batch.trim())
-      onAdd(result.subjects)
+      const result = await addSubject(
+        name.trim(), parseInt(theory, 10), parseInt(lab, 10), batch.trim(),
+      )
+      onAdd(result.subjects, name.trim())
     } catch (err) {
       setFormError(err.message || 'Failed to add subject.')
     } finally {
@@ -103,129 +145,96 @@ function AddSubjectForm({ onAdd, onCancel }) {
     >
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-display text-sm font-700 text-text-primary">Add Subject</h2>
-        <button
-          type="button"
-          onClick={onCancel}
-          aria-label="Cancel"
-          className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:text-text-primary cursor-pointer"
-        >
+        <Button variant="ghost" size="icon" onClick={onCancel} aria-label="Cancel">
           <X size={14} aria-hidden="true" />
-        </button>
+        </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs text-text-muted" htmlFor="subject-name">
-            Subject name
-          </label>
-          <input
-            id="subject-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Computer Networks"
-            className="
-              w-full rounded-lg border border-border-base bg-bg-3 px-3 py-2
-              text-sm text-text-primary placeholder:text-text-dim
-              focus:outline focus:outline-2 focus:outline-accent
-              focus:border-accent/50
-            "
-          />
-        </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field
+          className="sm:col-span-2"
+          id="subject-name"
+          label="Subject name"
+          required
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={() => markTouched('name')}
+          error={show('name')}
+          placeholder="e.g. Computer Networks"
+        />
 
-        <div>
-          <label className="mb-1 block text-xs text-text-muted" htmlFor="batch">
-            Batch / stream
-          </label>
-          <input
-            id="batch"
-            type="text"
-            value={batch}
-            onChange={(e) => setBatch(e.target.value)}
-            placeholder="e.g. CE, IT, Civil"
-            className="
-              w-full rounded-lg border border-border-base bg-bg-3 px-3 py-2
-              text-sm text-text-primary placeholder:text-text-dim
-              focus:outline focus:outline-2 focus:outline-accent
-              focus:border-accent/50
-            "
-          />
-        </div>
+        <Field
+          id="batch"
+          label="Batch / stream"
+          hint="Groups that cannot share a time slot."
+          required
+          type="text"
+          value={batch}
+          onChange={(e) => setBatch(e.target.value)}
+          onBlur={() => markTouched('batch')}
+          error={show('batch')}
+          placeholder="e.g. CE, IT, Civil"
+        />
 
-        <div>
-          <label className="mb-1 block text-xs text-text-muted" htmlFor="theory-hours">
-            Theory hours / week
-          </label>
-          <input
-            id="theory-hours"
-            type="number"
-            min="0"
-            max="20"
-            value={theory}
-            onChange={(e) => setTheory(e.target.value)}
-            placeholder="e.g. 3"
-            className="
-              w-full rounded-lg border border-border-base bg-bg-3 px-3 py-2
-              text-sm text-text-primary placeholder:text-text-dim
-              focus:outline focus:outline-2 focus:outline-accent
-              focus:border-accent/50
-            "
-          />
-        </div>
+        <Field
+          id="theory-hours"
+          label="Theory hours / week"
+          hint="Each hour becomes one 1-hour session."
+          type="number"
+          min="0"
+          max="20"
+          value={theory}
+          onChange={(e) => setTheory(e.target.value)}
+          onBlur={() => markTouched('theory')}
+          error={show('theory')}
+          placeholder="e.g. 3"
+        />
 
-        <div>
-          <label className="mb-1 block text-xs text-text-muted" htmlFor="lab-hours">
-            Lab hours / week (even)
-          </label>
-          <input
-            id="lab-hours"
-            type="number"
-            min="0"
-            max="20"
-            step="2"
-            value={lab}
-            onChange={(e) => setLab(e.target.value)}
-            placeholder="e.g. 2"
-            className="
-              w-full rounded-lg border border-border-base bg-bg-3 px-3 py-2
-              text-sm text-text-primary placeholder:text-text-dim
-              focus:outline focus:outline-2 focus:outline-accent
-              focus:border-accent/50
-            "
-          />
-        </div>
+        <Field
+          id="lab-hours"
+          label="Lab hours / week"
+          hint="Must be even — each lab runs for 2 consecutive hours."
+          type="number"
+          min="0"
+          max="20"
+          step="2"
+          value={lab}
+          onChange={(e) => setLab(e.target.value)}
+          onBlur={() => markTouched('lab')}
+          error={show('lab')}
+          placeholder="e.g. 2"
+        />
 
         <div className="flex items-end">
-          <button
+          <Button
             type="submit"
-            disabled={saving}
-            className="
-              w-full rounded-lg bg-accent px-4 py-2 text-sm font-600 text-bg-0
-              hover:bg-accent/90 disabled:opacity-50 cursor-pointer
-              focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent
-              transition-all duration-150
-            "
+            variant="primary"
+            disabled={saving || !isValid}
+            title={isValid ? undefined : 'Fill in the fields above first'}
+            className="w-full justify-center"
           >
             {saving ? 'Adding…' : 'Add'}
-          </button>
+          </Button>
         </div>
       </div>
 
       {formError && (
-        <p role="alert" className="mt-3 text-xs text-red-400">{formError}</p>
+        <p role="alert" className="mt-3 text-xs text-status-danger">{formError}</p>
       )}
     </form>
   )
 }
 
 export default function SubjectsPage() {
-  const router = useRouter()
   const [subjects, setSubjects]   = useState(null)
   const [timetable, setTimetable] = useState(null)
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState(null)
   const [showForm, setShowForm]   = useState(false)
   const [deleting, setDeleting]   = useState(null)   // name being deleted
+  const [dataVersion, setDataVersion] = useState(0)  // bumped on every edit
+  const toast = useToast()
 
   async function load() {
     setLoading(true)
@@ -248,9 +257,22 @@ export default function SubjectsPage() {
     try {
       const result = await deleteSubject(name)
       setSubjects(result.subjects)
+      setDataVersion((v) => v + 1)
+      // The server returns the full deleted record, so undo can re-create it
+      // exactly — hours and batch included, not just the name.
+      const r = result.restore
+      toast.undo(`Removed “${name}”.`, async () => {
+        try {
+          const back = await addSubject(r.name, r.theory_hours, r.lab_hours, r.batch)
+          setSubjects(back.subjects)
+          setDataVersion((v) => v + 1)
+          toast.success(`Restored “${r.name}”.`)
+        } catch (err) {
+          toast.error(err.message || 'Could not restore the subject.')
+        }
+      })
     } catch (err) {
-      // surface briefly via error state
-      setError(err.message || 'Failed to delete subject.')
+      toast.error(err.message || 'Failed to delete subject.')
     } finally {
       setDeleting(null)
     }
@@ -269,69 +291,44 @@ export default function SubjectsPage() {
       <Navbar />
 
       <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6">
-        {/* Page header */}
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => router.push('/')}
-              aria-label="Back to dashboard"
-              className="
-                flex h-9 w-9 items-center justify-center rounded-lg border border-border-base
-                bg-bg-2 text-text-secondary transition-all duration-150
-                hover:border-border-bright hover:text-text-primary cursor-pointer
-                focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent
-              "
-            >
-              <ArrowLeft size={16} aria-hidden="true" />
-            </button>
-            <div>
-              <h1 className="font-display text-2xl font-800 text-text-primary">Subject Overview</h1>
-              <p className="text-sm text-text-muted">
-                {subjects ? `${subjects.length} subjects` : 'Scheduling progress per subject'}
-              </p>
-            </div>
-          </div>
+        <PageHeader
+          title="Subject Overview"
+          subtitle={subjects ? `${subjects.length} subjects` : 'Scheduling progress per subject'}
+          actions={
+            <>
+              <Button
+                variant="primary"
+                onClick={() => setShowForm((v) => !v)}
+                aria-expanded={showForm}
+                aria-label="Add subject"
+              >
+                <Plus size={14} aria-hidden="true" />
+                <span className="hidden sm:inline">Add Subject</span>
+              </Button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowForm((v) => !v)}
-              aria-label="Add subject"
-              className="
-                flex items-center gap-2 rounded-lg border border-accent/30
-                bg-accent/10 px-4 py-2 text-sm text-accent
-                transition-all duration-150 hover:bg-accent/20 cursor-pointer
-                focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent
-              "
-            >
-              <Plus size={14} aria-hidden="true" />
-              <span className="hidden sm:inline">Add Subject</span>
-            </button>
+              <Button onClick={load} disabled={loading} aria-label="Refresh subjects">
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
+            </>
+          }
+        />
 
-            <button
-              type="button"
-              onClick={load}
-              disabled={loading}
-              aria-label="Refresh subjects"
-              className="
-                flex items-center gap-2 rounded-lg border border-border-base
-                bg-bg-2 px-4 py-2 text-sm text-text-secondary
-                transition-all duration-150 hover:border-border-bright hover:text-text-primary
-                cursor-pointer disabled:opacity-50
-                focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent
-              "
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-          </div>
-        </div>
+        {/* Out-of-date warning — editing subjects invalidates the timetable */}
+        <StaleBanner
+          refreshKey={dataVersion}
+          onRegenerated={() => setDataVersion((v) => v + 1)}
+        />
 
         {/* Add Subject form */}
         {showForm && (
           <AddSubjectForm
-            onAdd={(updated) => { setSubjects(updated); setShowForm(false) }}
+            onAdd={(updated, name) => {
+              setSubjects(updated)
+              setShowForm(false)
+              setDataVersion((v) => v + 1)
+              toast.success(`Added “${name}”.`)
+            }}
             onCancel={() => setShowForm(false)}
           />
         )}
@@ -340,16 +337,12 @@ export default function SubjectsPage() {
         {error && !loading && (
           <div
             role="alert"
-            className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/8 p-4 text-sm text-red-400"
+            className="mb-6 flex items-center gap-3 rounded-xl border border-status-danger/30 bg-status-danger/10 p-4 text-sm text-status-danger"
           >
-            <span className="font-mono">{error}</span>
-            <button
-              type="button"
-              onClick={() => setError(null)}
-              className="ml-auto shrink-0 rounded-md border border-red-500/20 px-3 py-1 text-xs hover:bg-red-500/10 cursor-pointer focus-visible:outline focus-visible:outline-accent"
-            >
+            <span>{error}</span>
+            <Button variant="danger" onClick={() => setError(null)} className="ml-auto">
               Dismiss
-            </button>
+            </Button>
           </div>
         )}
 
@@ -369,25 +362,25 @@ export default function SubjectsPage() {
               <BarChart data={chartData} barCategoryGap="30%">
                 <XAxis
                   dataKey="name"
-                  tick={{ fill: '#7D8FA8', fontSize: 11, fontFamily: 'var(--font-jetbrains)' }}
+                  tick={{ fill: '#475569', fontSize: 11, fontFamily: 'var(--font-jetbrains)' }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: '#475A72', fontSize: 10, fontFamily: 'var(--font-jetbrains)' }}
+                  tick={{ fill: '#646C7A', fontSize: 11, fontFamily: 'var(--font-jetbrains)' }}
                   axisLine={false}
                   tickLine={false}
                   width={28}
                 />
                 <RechartTooltip
                   content={<ChartTooltip />}
-                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                  cursor={{ fill: 'rgba(15, 23, 41, 0.04)' }}
                 />
                 <Legend formatter={(value) => (
-                  <span style={{ color: '#7D8FA8', fontSize: 11 }}>{value}</span>
+                  <span style={{ color: '#475569', fontSize: 11 }}>{value}</span>
                 )} />
-                <Bar dataKey="Theory" radius={[3, 3, 0, 0]} fill="#3B82F6" opacity={0.85} />
-                <Bar dataKey="Lab"    radius={[3, 3, 0, 0]} fill="#8B5CF6" opacity={0.85} />
+                <Bar dataKey="Theory" radius={[3, 3, 0, 0]} fill="#2461DB" />
+                <Bar dataKey="Lab"    radius={[3, 3, 0, 0]} fill="#7C3AED" />
               </BarChart>
             </ResponsiveContainer>
           </section>
@@ -403,46 +396,30 @@ export default function SubjectsPage() {
             aria-label="Subject cards"
           >
             {subjects.map((subject, i) => (
-              <div key={subject.name} role="listitem" style={{ animationDelay: `${i * 60}ms` }} className="relative group">
+              <div key={subject.name} role="listitem" style={{ animationDelay: `${i * 60}ms` }}>
                 <SubjectCard
                   subject={subject}
                   scheduledTheory={theory[subject.name] ?? 0}
                   scheduledLab={lab[subject.name] ?? 0}
                   floors={floors[subject.name] ?? []}
                   paletteIdx={i}
+                  onDelete={() => handleDelete(subject.name)}
+                  deleting={deleting === subject.name}
                 />
                 {/* Delete button — appears on hover */}
-                <button
-                  type="button"
-                  onClick={() => handleDelete(subject.name)}
-                  disabled={deleting === subject.name}
-                  aria-label={`Remove ${subject.name}`}
-                  className="
-                    absolute right-3 top-3 flex h-7 w-7 items-center justify-center
-                    rounded-md border border-red-500/20 bg-bg-0/80 text-red-400
-                    opacity-0 group-hover:opacity-100 transition-opacity duration-150
-                    hover:bg-red-500/15 disabled:opacity-40 cursor-pointer
-                    focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400
-                  "
-                >
-                  <Trash2 size={12} aria-hidden="true" />
-                </button>
               </div>
             ))}
           </div>
         ) : !loading && !error ? (
           <div className="flex flex-col items-center gap-4 rounded-xl border border-border-base bg-bg-2 p-12 text-center">
             <p className="text-text-secondary">No subjects yet.</p>
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="rounded-lg border border-accent/30 bg-accent/10 px-4 py-2 text-sm text-accent hover:bg-accent/20 cursor-pointer focus-visible:outline focus-visible:outline-accent"
-            >
+            <Button variant="primary" onClick={() => setShowForm(true)}>
               Add your first subject
-            </button>
+            </Button>
           </div>
         ) : null}
       </main>
+
     </div>
   )
 }
