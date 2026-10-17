@@ -1,17 +1,24 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Network, Brain, GitBranch, Layers, ChevronDown } from 'lucide-react'
-import Navbar from '../components/Navbar'
-import StatsBar from '../components/StatsBar'
-import GenerateButton from '../components/GenerateButton'
-import FailureScreen from '../components/FailureScreen'
-import StaleBanner from '../components/StaleBanner'
-import GenerateProgress from '../components/GenerateProgress'
-import { useToast } from '../components/ToastProvider'
-import { generateSchedule, getTimetable, getUnusedRooms, getSubjects, getRooms, getTimings } from '../lib/api'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Network, Brain, GitBranch, Layers, ChevronDown } from "lucide-react";
+import Navbar from "../components/Navbar";
+import StatsBar from "../components/StatsBar";
+import GenerateButton from "../components/GenerateButton";
+import FailureScreen from "../components/FailureScreen";
+import StaleBanner from "../components/StaleBanner";
+import GenerateProgress from "../components/GenerateProgress";
+import { useToast } from "../components/ToastProvider";
+import {
+  generateSchedule,
+  getTimetable,
+  getUnusedRooms,
+  getSubjects,
+  getRooms,
+  getTimings,
+} from "../lib/api";
 
 /**
  * Outcome-first descriptions, in the user's language rather than the
@@ -29,125 +36,130 @@ import { generateSchedule, getTimetable, getUnusedRooms, getSubjects, getRooms, 
 const OUTCOMES = [
   {
     icon: Network,
-    title: 'Nothing double-booked',
-    desc: 'A batch is never in two places at once, and no room is used twice in the same hour.',
+    title: "Nothing double-booked",
+    desc: "A batch is never in two places at once, and no room is used twice in the same hour.",
   },
   {
     icon: Layers,
-    title: 'Labs stay in one piece',
-    desc: 'Every lab gets two back-to-back hours in a lab room, never split across the day.',
+    title: "Labs stay in one piece",
+    desc: "Every lab gets two back-to-back hours in a lab room, never split across the day.",
   },
   {
     icon: GitBranch,
-    title: 'Spread across the week',
-    desc: 'A subject’s classes are pushed apart rather than stacked onto a single day.',
+    title: "Spread across the week",
+    desc: "A subject’s classes are pushed apart rather than stacked onto a single day.",
   },
   {
     icon: Brain,
-    title: 'Rooms shared out',
-    desc: 'Classes are distributed across floors instead of crowding into the same few rooms.',
+    title: "Rooms shared out",
+    desc: "Classes are distributed across floors instead of crowding into the same few rooms.",
   },
-]
+];
 
 /** The same system, described for a technical audience. */
 const CSP_FEATURES = [
   {
-    title: 'Constraint Satisfaction',
-    desc: 'Models scheduling as a CSP — variables (sessions), domains (day/slot/room), and hard constraints that must never be violated.',
+    title: "Constraint Satisfaction",
+    desc: "Models scheduling as a CSP — variables (sessions), domains (day/slot/room), and hard constraints that must never be violated.",
   },
   {
-    title: 'MRV + Degree Heuristics',
-    desc: 'Variable ordering selects the session with the smallest domain first (MRV), breaking ties by most constraints on unassigned neighbours.',
+    title: "MRV + Degree Heuristics",
+    desc: "Variable ordering selects the session with the smallest domain first (MRV), breaking ties by most constraints on unassigned neighbours.",
   },
   {
-    title: 'LCV Value Ordering',
-    desc: 'Least Constraining Value orders domain values to maximise options for remaining sessions, combined with soft-constraint scoring.',
+    title: "LCV Value Ordering",
+    desc: "Least Constraining Value orders domain values to maximise options for remaining sessions, combined with soft-constraint scoring.",
   },
   {
-    title: 'Forward Checking',
-    desc: 'After each assignment, inconsistent values are pruned from neighbour domains immediately — catching dead ends early and enabling fast backtracking.',
+    title: "Forward Checking",
+    desc: "After each assignment, inconsistent values are pruned from neighbour domains immediately — catching dead ends early and enabling fast backtracking.",
   },
-]
+];
 
 export default function DashboardPage() {
-  const router = useRouter()
+  const router = useRouter();
 
-  const [loading, setLoading]         = useState(false)
-  const [statsLoading, setStatsLoading] = useState(true)
-  const [failure, setFailure]         = useState(null)
-  const [failureReasons, setFailureReasons] = useState([])
-  const [stats, setStats]             = useState(null)
-  const [unusedRooms, setUnusedRooms] = useState(null)
-  const [dataVersion, setDataVersion] = useState(0)
-  const [problem, setProblem] = useState(null)
-  const toast = useToast()
+  const [loading, setLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [failure, setFailure] = useState(null);
+  const [failureReasons, setFailureReasons] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [unusedRooms, setUnusedRooms] = useState(null);
+  const [dataVersion, setDataVersion] = useState(0);
+  const [problem, setProblem] = useState(null);
+  const toast = useToast();
 
   // Load existing stats on mount (if a schedule was already generated)
   useEffect(() => {
     async function loadExisting() {
       try {
-        const [tt, ur] = await Promise.all([getTimetable(), getUnusedRooms()])
-        setStats(tt.stats)
-        setUnusedRooms(ur.unused_rooms)   // endpoint wraps the array in an object
+        const [tt, ur] = await Promise.all([getTimetable(), getUnusedRooms()]);
+        setStats(tt.stats);
+        setUnusedRooms(ur.unused_rooms); // endpoint wraps the array in an object
       } catch {
         // No schedule yet — stats remain null
       } finally {
-        setStatsLoading(false)
+        setStatsLoading(false);
       }
     }
-    loadExisting()
-  }, [])
+    loadExisting();
+  }, []);
 
   // Real problem size, for the progress panel. Fetched separately so a missing
   // timetable (the common first-run case) does not prevent it loading.
   useEffect(() => {
     async function loadProblem() {
       try {
-        const [subs, rms, tms] = await Promise.all([getSubjects(), getRooms(), getTimings()])
+        const [subs, rms, tms] = await Promise.all([
+          getSubjects(),
+          getRooms(),
+          getTimings(),
+        ]);
         // One session per theory hour; each lab session covers 2 hours.
         const sessions = subs.subjects.reduce(
-          (n, s) => n + s.theory_hours + Math.floor(s.lab_hours / 2), 0,
-        )
+          (n, s) => n + s.theory_hours + Math.floor(s.lab_hours / 2),
+          0,
+        );
         setProblem({
           subjects: subs.subjects.length,
           sessions,
-          rooms:    rms.rooms.length,
-          days:     tms.days.length,
-          slots:    tms.slots.length,
-        })
+          rooms: rms.rooms.length,
+          days: tms.days.length,
+          slots: tms.slots.length,
+        });
       } catch {
-        setProblem(null)
+        setProblem(null);
       }
     }
-    loadProblem()
-  }, [dataVersion])
+    loadProblem();
+  }, [dataVersion]);
 
   async function handleGenerate() {
-    setLoading(true)
-    setFailure(null)
-    setFailureReasons([])
+    setLoading(true);
+    setFailure(null);
+    setFailureReasons([]);
     try {
-      const result = await generateSchedule()
-      if (result.status === 'success') {
-        setStats(result.stats)
-        setUnusedRooms(result.unused_rooms)
-        setDataVersion((v) => v + 1)
+      const result = await generateSchedule();
+      if (result.status === "success") {
+        setStats(result.stats);
+        setUnusedRooms(result.unused_rooms);
+        setDataVersion((v) => v + 1);
         toast.success(
           `Timetable generated — ${result.stats.total_sessions_scheduled} sessions across ` +
-          `${result.stats.floors_used.length} floor(s).`
-        )
-        router.push('/schedule')
+            `${result.stats.floors_used.length} floor(s).`,
+        );
+        router.push("/schedule");
       } else {
-        setFailure(result.message || 'No valid schedule could be found.')
-        setFailureReasons(result.reasons ?? [])
+        setFailure(result.message || "No valid schedule could be found.");
+        setFailureReasons(result.reasons ?? []);
       }
     } catch (err) {
       // A 422 carries the solver's diagnosis in the response body; an Error
       // message alone would lose it.
-      setFailure(err.message || 'Failed to connect to the scheduler API.')
-      setFailureReasons(err.body?.reasons ?? [])
+      setFailure(err.message || "Failed to connect to the scheduler API.");
+      setFailureReasons(err.body?.reasons ?? []);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -171,9 +183,12 @@ export default function DashboardPage() {
 
           {/* Course badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/8 px-4 py-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse-slow" aria-hidden="true" />
+            <span
+              className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse-slow"
+              aria-hidden="true"
+            />
             <span className="font-mono text-xs font-500 text-accent tracking-widest">
-              AI Course · Module 4 · CSP
+              HCI Course
             </span>
           </div>
 
@@ -201,7 +216,7 @@ export default function DashboardPage() {
               {problem
                 ? `${problem.subjects} subjects · ${problem.sessions} sessions · ` +
                   `${problem.rooms} rooms · ${problem.days} days × ${problem.slots} slots`
-                : 'Loading current setup…'}
+                : "Loading current setup…"}
             </p>
           </div>
         </section>
@@ -243,9 +258,21 @@ export default function DashboardPage() {
             </h2>
             <ol className="flex flex-col gap-3" role="list">
               {[
-                ['Check your subjects', 'Review the hours and batch for each subject.', '/subjects'],
-                ['Check rooms and timings', 'Confirm the working days, hour slots and available rooms.', '/resources'],
-                ['Generate the timetable', 'Press Generate above — the result appears under Timetable.', null],
+                [
+                  "Check your subjects",
+                  "Review the hours and batch for each subject.",
+                  "/subjects",
+                ],
+                [
+                  "Check rooms and timings",
+                  "Confirm the working days, hour slots and available rooms.",
+                  "/resources",
+                ],
+                [
+                  "Generate the timetable",
+                  "Press Generate above — the result appears under Timetable.",
+                  null,
+                ],
               ].map(([title, desc, href], i) => (
                 <li key={title} className="flex items-start gap-3">
                   <span
@@ -257,10 +284,15 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm font-600 text-text-primary">
                       {href ? (
-                        <Link href={href} className="hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">
+                        <Link
+                          href={href}
+                          className="hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                        >
                           {title}
                         </Link>
-                      ) : title}
+                      ) : (
+                        title
+                      )}
                     </p>
                     <p className="text-xs text-text-secondary">{desc}</p>
                   </div>
@@ -272,8 +304,14 @@ export default function DashboardPage() {
 
         {/* Stats bar */}
         <section className="mb-12" aria-labelledby="stats-heading">
-          <h2 id="stats-heading" className="sr-only">Schedule statistics</h2>
-          <StatsBar stats={stats} unusedRooms={unusedRooms} loading={statsLoading} />
+          <h2 id="stats-heading" className="sr-only">
+            Schedule statistics
+          </h2>
+          <StatsBar
+            stats={stats}
+            unusedRooms={unusedRooms}
+            loading={statsLoading}
+          />
         </section>
 
         {/* What the schedule guarantees — plain language, outcomes first */}
@@ -298,13 +336,17 @@ export default function DashboardPage() {
                   transition-all duration-200 hover:border-border-bright hover:bg-bg-3
                   animate-slide-up stagger-${i + 1}
                 `}
-                style={{ animationFillMode: 'both' }}
+                style={{ animationFillMode: "both" }}
               >
                 <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
                   <Icon size={16} className="text-accent" aria-hidden="true" />
                 </div>
-                <h3 className="mb-1.5 font-display text-sm font-700 text-text-primary">{title}</h3>
-                <p className="text-xs leading-relaxed text-text-secondary">{desc}</p>
+                <h3 className="mb-1.5 font-display text-sm font-700 text-text-primary">
+                  {title}
+                </h3>
+                <p className="text-xs leading-relaxed text-text-secondary">
+                  {desc}
+                </p>
               </article>
             ))}
           </div>
@@ -333,8 +375,12 @@ export default function DashboardPage() {
             <div className="grid gap-4 border-t border-border-dim p-5 sm:grid-cols-2">
               {CSP_FEATURES.map(({ title, desc }) => (
                 <div key={title}>
-                  <h3 className="mb-1 font-display text-sm font-700 text-text-primary">{title}</h3>
-                  <p className="text-xs leading-relaxed text-text-secondary">{desc}</p>
+                  <h3 className="mb-1 font-display text-sm font-700 text-text-primary">
+                    {title}
+                  </h3>
+                  <p className="text-xs leading-relaxed text-text-secondary">
+                    {desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -342,5 +388,5 @@ export default function DashboardPage() {
         </section>
       </main>
     </div>
-  )
+  );
 }
