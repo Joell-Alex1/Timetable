@@ -2,59 +2,57 @@
 
 import { useState } from 'react'
 import { ChevronDown, Building2 } from 'lucide-react'
+import { SUBJECT_PALETTES as PALETTES, hashSubject } from '../lib/palette'
 
 const SKELETON_ROWS = 5
 
-// Build room usage map from timetable
+/**
+ * Build a room usage map from the timetable.
+ *
+ * A room is routinely shared by several subjects across the week, so
+ * `subjects` is a list — keying only the first one seen would hide the rest
+ * behind an inflated session count.
+ */
 function buildRoomOccupancy(timetable) {
-  const occ = {} // room → { subject, type, sessions: [{ day, time }] }
+  const occ = {} // room → { subjects: string[], types: Set, sessions: [{ day, time }] }
   if (!timetable) return occ
 
   for (const [day, slots] of Object.entries(timetable)) {
     for (const [time, entries] of Object.entries(slots)) {
       for (const entry of entries) {
         if (!occ[entry.room]) {
-          occ[entry.room] = { subject: entry.subject, type: entry.type, sessions: [] }
+          occ[entry.room] = { subjects: [], types: new Set(), sessions: [] }
         }
-        occ[entry.room].sessions.push({ day, time })
+        const room = occ[entry.room]
+        if (!room.subjects.includes(entry.subject)) room.subjects.push(entry.subject)
+        room.types.add(entry.type)
+        room.sessions.push({ day, time })
       }
     }
   }
   return occ
 }
 
-// 6 deterministic palettes (matches TimetableGrid)
-const PALETTES = [
-  { bg: 'rgba(59,130,246,0.14)',  border: 'rgba(59,130,246,0.38)', text: '#93C5FD' },
-  { bg: 'rgba(16,185,129,0.14)', border: 'rgba(16,185,129,0.38)', text: '#6EE7B7' },
-  { bg: 'rgba(245,158,11,0.14)', border: 'rgba(245,158,11,0.38)', text: '#FCD34D' },
-  { bg: 'rgba(239,68,68,0.14)',  border: 'rgba(239,68,68,0.38)',  text: '#FCA5A5' },
-  { bg: 'rgba(139,92,246,0.14)', border: 'rgba(139,92,246,0.38)', text: '#C4B5FD' },
-  { bg: 'rgba(249,115,22,0.14)', border: 'rgba(249,115,22,0.38)', text: '#FDBA74' },
-]
-
-function hashSubject(name) {
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff
-  return Math.abs(h) % PALETTES.length
-}
 
 function RoomCard({ room, occupancy }) {
   const info = occupancy[room]
-  const palette = info ? PALETTES[hashSubject(info.subject)] : null
-  const isLab = info?.type === 'Lab'
+  // Colour by the room's primary (first-scheduled) subject.
+  const palette = info ? PALETTES[hashSubject(info.subjects[0])] : null
+  // A room is only a lab room if everything in it is a lab.
+  const isLab = info ? info.types.has('Lab') && info.types.size === 1 : false
   const sessionCount = info
     ? [...new Set(info.sessions.map((s) => `${s.day}-${s.time}`))].length
     : 0
+  const extraSubjects = info ? info.subjects.length - 1 : 0
 
   if (!info) {
     return (
       <div
-        className="flex flex-col gap-1 rounded-lg border border-dashed border-border-dim p-2.5 opacity-40"
+        className="flex flex-col gap-1 rounded-lg border border-dashed border-border-base bg-bg-3/60 p-2.5"
         aria-label={`${room} — unused`}
       >
-        <span className="font-mono text-[11px] font-500 text-text-muted">{room}</span>
-        <span className="text-[10px] text-text-muted">Unused</span>
+        <span className="font-mono text-2xs font-500 text-text-muted">{room}</span>
+        <span className="text-2xs text-text-muted">Unused</span>
       </div>
     )
   }
@@ -63,12 +61,13 @@ function RoomCard({ room, occupancy }) {
     <div
       className="flex flex-col gap-1 rounded-lg border p-2.5 transition-all duration-150 hover:brightness-110 glow-border"
       style={{ background: palette.bg, borderColor: palette.border }}
-      aria-label={`${room} — ${info.subject}, ${info.type}, ${sessionCount} session${sessionCount !== 1 ? 's' : ''}`}
+      title={info.subjects.join(', ')}
+      aria-label={`${room} — ${info.subjects.join(', ')}; ${sessionCount} session${sessionCount !== 1 ? 's' : ''}`}
     >
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[11px] font-600 text-text-secondary">{room}</span>
+        <span className="font-mono text-2xs font-600 text-text-secondary">{room}</span>
         <span
-          className={`rounded-full px-1.5 py-px text-[9px] font-600 uppercase tracking-wide ${
+          className={`rounded-full px-1.5 py-px text-2xs font-600 uppercase tracking-wide ${
             isLab ? 'pill-lab' : 'pill-theory'
           }`}
         >
@@ -76,12 +75,17 @@ function RoomCard({ room, occupancy }) {
         </span>
       </div>
       <span
-        className="truncate text-[11px] font-500 leading-tight"
+        className="truncate text-2xs font-500 leading-tight"
         style={{ color: palette.text }}
       >
-        {info.subject}
+        {info.subjects[0]}
       </span>
-      <span className="font-mono text-[9px] text-text-muted">{sessionCount}× session</span>
+      {extraSubjects > 0 && (
+        <span className="truncate text-2xs text-text-secondary leading-tight">
+          +{extraSubjects} more subject{extraSubjects !== 1 ? 's' : ''}
+        </span>
+      )}
+      <span className="font-mono text-2xs text-text-muted">{sessionCount}× session</span>
     </div>
   )
 }
@@ -142,7 +146,7 @@ function FloorAccordion({ floor, crRooms, clRooms, defaultOpen, roomSummary, occ
         >
           {/* Theory rooms */}
           <div className="mb-6">
-            <p className="mb-3 text-[10px] font-600 uppercase tracking-widest text-text-muted">
+            <p className="mb-3 text-2xs font-600 uppercase tracking-widest text-text-muted">
               Theory Rooms (CR) — {usedTheory}/{crRooms.length} in use
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
@@ -154,7 +158,7 @@ function FloorAccordion({ floor, crRooms, clRooms, defaultOpen, roomSummary, occ
 
           {/* Lab rooms */}
           <div>
-            <p className="mb-3 text-[10px] font-600 uppercase tracking-widest text-text-muted">
+            <p className="mb-3 text-2xs font-600 uppercase tracking-widest text-text-muted">
               Lab Rooms (CL) — {usedLab}/{clRooms.length} in use
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

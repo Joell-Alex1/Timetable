@@ -17,7 +17,7 @@ export default function GenerateButton({ onClick, loading = false, label = 'Gene
         focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2
         ${loading
           ? 'bg-accent/20 text-accent/60 cursor-not-allowed'
-          : 'bg-accent text-bg-0 hover:bg-accent/90 hover:shadow-glow-md active:scale-[0.98]'
+          : 'bg-accent text-white hover:bg-accent/90 hover:shadow-glow-md active:scale-[0.98]'
         }
       `}
     >

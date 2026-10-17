@@ -28,7 +28,7 @@ export default function Navbar() {
             AI Smart Course Scheduler
           </span>
           <span
-            className="hidden sm:inline-flex items-center rounded-full border border-accent/30 bg-accent/8 px-2 py-0.5 font-mono text-[10px] font-500 text-accent tracking-widest"
+            className="hidden sm:inline-flex items-center rounded-full border border-accent/30 bg-accent/8 px-2 py-0.5 font-mono text-2xs font-500 text-accent tracking-widest"
             aria-label="Course code 702CO0C032"
           >
             702CO0C032

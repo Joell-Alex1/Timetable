@@ -204,12 +204,17 @@ def create_schedule(subjects: List[Dict] = None, res: Optional[Resources] = None
         return format_timetable(csp.assignment, sessions_map, res)
 
     # ── Failure response ──────────────────────────────────────────────────────
+    reasons = diagnose_failure(subjects, res)
     return {
         "status": "failure",
         "message": (
-            "No valid schedule could be found. "
-            "The constraints may be too tight for the given subjects and rooms."
+            "No valid schedule could be found. " + (
+                reasons[0] if reasons else
+                "Capacity is sufficient, so the clash comes from how the "
+                "sessions combine. Try freeing up more rooms or time slots."
+            )
         ),
+        "reasons": reasons,
         "timetable": {},
         "room_summary": {
             f"floor_{f}": {"theory": [], "lab": []}
@@ -222,6 +227,60 @@ def create_schedule(subjects: List[Dict] = None, res: Optional[Resources] = None
             "subjects_fully_scheduled": 0,
         },
     }
+
+
+# ── 4b. Failure diagnosis ─────────────────────────────────────────────────────
+
+def diagnose_failure(subjects: List[Dict], res: Resources) -> List[str]:
+    """
+    Explain *why* no schedule could be found, in terms the user can act on.
+
+    These are capacity checks, so each one it reports is a provable
+    impossibility rather than a guess — the solver cannot succeed while any of
+    them holds. An empty list means capacity is sufficient and the clash is a
+    subtler combination of constraints.
+    """
+    reasons: List[str] = []
+    week_slots = len(res.days) * res.num_slots          # hours available per week
+    theory_hours = sum(s["theory_hours"] for s in subjects)
+    lab_hours    = sum(s["lab_hours"]    for s in subjects)
+
+    # A lab occupies two *consecutive* slots, so a day needs at least two.
+    if lab_hours and res.num_slots < 2:
+        reasons.append(
+            f"Lab sessions need 2 consecutive hours, but each day only has "
+            f"{res.num_slots} time slot(s)."
+        )
+
+    # Sessions of one batch cannot overlap, so a batch's weekly hours can never
+    # exceed the number of hours in the week.
+    per_batch: Dict[str, int] = {}
+    for s in subjects:
+        per_batch[s.get("batch", "default")] = (
+            per_batch.get(s.get("batch", "default"), 0)
+            + s["theory_hours"] + s["lab_hours"]
+        )
+    for batch, hours in sorted(per_batch.items()):
+        if hours > week_slots:
+            reasons.append(
+                f"Batch '{batch}' needs {hours} hours a week but the timetable "
+                f"only has {week_slots} ({len(res.days)} days × {res.num_slots} slots). "
+                f"Reduce its hours, or add days or time slots."
+            )
+
+    # Room capacity, counted as room-hours available across the week.
+    if theory_hours > len(res.cr_rooms) * week_slots:
+        reasons.append(
+            f"{theory_hours} theory hours need more space than "
+            f"{len(res.cr_rooms)} theory room(s) provide. Add CR rooms."
+        )
+    if lab_hours > len(res.cl_rooms) * week_slots:
+        reasons.append(
+            f"{lab_hours} lab hours need more space than "
+            f"{len(res.cl_rooms)} lab room(s) provide. Add CL rooms."
+        )
+
+    return reasons
 
 
 # ── 5. Result formatter ───────────────────────────────────────────────────────

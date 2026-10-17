@@ -1,30 +1,23 @@
 'use client'
 
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { CheckCircle2, XCircle, Trash2 } from 'lucide-react'
+import Button from './Button'
+import { SUBJECT_PALETTES as PALETTES } from '../lib/palette'
 
-// Deterministic palette (matches TimetableGrid/FloorMap)
-const PALETTES = [
-  { bar: '#3B82F6', border: 'rgba(59,130,246,0.3)',  bg: 'rgba(59,130,246,0.08)',  text: '#93C5FD' },
-  { bar: '#10B981', border: 'rgba(16,185,129,0.3)',  bg: 'rgba(16,185,129,0.08)',  text: '#6EE7B7' },
-  { bar: '#F59E0B', border: 'rgba(245,158,11,0.3)',  bg: 'rgba(245,158,11,0.08)',  text: '#FCD34D' },
-  { bar: '#EF4444', border: 'rgba(239,68,68,0.3)',   bg: 'rgba(239,68,68,0.08)',   text: '#FCA5A5' },
-  { bar: '#8B5CF6', border: 'rgba(139,92,246,0.3)',  bg: 'rgba(139,92,246,0.08)',  text: '#C4B5FD' },
-  { bar: '#F97316', border: 'rgba(249,115,22,0.3)',  bg: 'rgba(249,115,22,0.08)',  text: '#FDBA74' },
-]
 
 function ProgressBar({ value, max, color, label }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0
   return (
     <div role="group" aria-label={label}>
       <div className="mb-1 flex items-center justify-between">
-        <span className="text-[11px] text-text-muted">{label}</span>
-        <span className="font-mono text-[11px] text-text-secondary">
+        <span className="text-2xs text-text-muted">{label}</span>
+        <span className="font-mono text-2xs text-text-secondary">
           {value}/{max}h
         </span>
       </div>
       <div
         className="h-1.5 w-full rounded-full overflow-hidden"
-        style={{ background: 'rgba(255,255,255,0.06)' }}
+        style={{ background: 'rgba(15, 23, 41, 0.10)' }}
         role="progressbar"
         aria-valuenow={value}
         aria-valuemin={0}
@@ -73,7 +66,7 @@ export default function SubjectCard({ subject, scheduledTheory, scheduledLab, fl
           </p>
           {subject.batch && (
             <span
-              className="mt-1.5 inline-block rounded-md border px-2 py-0.5 font-mono text-[10px] font-600"
+              className="mt-1.5 inline-block rounded-md border px-2 py-0.5 font-mono text-2xs font-600"
               style={{ borderColor: palette.border, color: palette.text, background: palette.bg }}
             >
               {subject.batch}
@@ -81,21 +74,35 @@ export default function SubjectCard({ subject, scheduledTheory, scheduledLab, fl
           )}
         </div>
 
-        {/* Status badge */}
-        <div
-          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-600 ${
-            complete
-              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-              : 'border-red-500/30 bg-red-500/10 text-red-400'
-          }`}
-          aria-label={complete ? 'Fully scheduled' : 'Incomplete'}
-        >
-          {complete ? (
-            <CheckCircle2 size={12} aria-hidden="true" />
-          ) : (
-            <XCircle size={12} aria-hidden="true" />
+        {/* Status + actions, grouped so neither can overlap the other */}
+        <div className="flex shrink-0 items-center gap-2">
+          <div
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-600 ${
+              complete
+                ? 'border-status-success/30 bg-status-success/10 text-status-success'
+                : 'border-status-danger/30 bg-status-danger/10 text-status-danger'
+            }`}
+            aria-label={complete ? 'Fully scheduled' : 'Incomplete'}
+          >
+            {complete ? (
+              <CheckCircle2 size={12} aria-hidden="true" />
+            ) : (
+              <XCircle size={12} aria-hidden="true" />
+            )}
+            {complete ? 'Complete' : 'Incomplete'}
+          </div>
+
+          {onDelete && (
+            <Button
+              variant="danger"
+              size="icon"
+              onClick={onDelete}
+              disabled={deleting}
+              aria-label={`Remove ${subject.name}`}
+            >
+              <Trash2 size={14} aria-hidden="true" />
+            </Button>
           )}
-          {complete ? 'Complete' : 'Incomplete'}
         </div>
       </div>
 
@@ -123,7 +130,7 @@ export default function SubjectCard({ subject, scheduledTheory, scheduledLab, fl
           {floorList.map((f) => (
             <span
               key={f}
-              className="rounded-md border border-border-base bg-bg-3 px-2 py-0.5 font-mono text-[10px] text-text-muted"
+              className="rounded-md border border-border-base bg-bg-3 px-2 py-0.5 font-mono text-2xs text-text-muted"
             >
               Floor {f}
             </span>
