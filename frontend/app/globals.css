@@ -7,25 +7,25 @@
   --font-jetbrains: 'JetBrains Mono', monospace;
 
   /* Semantic color tokens */
-  --color-bg-0: #F9FAFB;
-  --color-bg-1: #FFFFFF;
-  --color-bg-2: #FFFFFF;
-  --color-bg-3: #F3F4F6;
-  --color-border-dim: #E5E7EB;
-  --color-border-base: #D8DFE8;
+  --color-bg-0: #F5F0E6;
+  --color-bg-1: #FFFCF6;
+  --color-bg-2: #FFFCF6;
+  --color-bg-3: #EDE7DA;
+  --color-border-dim: #EDE7DB;
+  --color-border-base: #DDD5C8;
   /* Keep in sync with tailwind.config.js — these vars style globals.css
      itself (body, scrollbar, skeleton); the `text-text-*` utility classes
      come from the Tailwind theme. All three clear WCAG AA on every surface. */
-  --color-text-primary: #0F1729;
-  --color-text-secondary: #475569;
-  --color-text-muted: #646C7A;
-  --color-accent: #2461DB;
+  --color-text-primary: #342F28;
+  --color-text-secondary: #555148;
+  --color-text-muted: #676357;
+  --color-accent: #34483A;
 
   /* Semantic status colours — red error, green success, amber warning, blue info */
-  --color-danger: #CC1F1F;
-  --color-success: #15803D;
-  --color-warning: #B45309;
-  --color-info: #1D4ED8;
+  --color-danger: #96352A;
+  --color-success: #35603D;
+  --color-warning: #8A5A22;
+  --color-info: #33506B;
 
   /* Subject color accents (HSL values for opacity control) */
   --subject-0: 217 91% 60%;   /* Blue — AI */
@@ -62,11 +62,11 @@ body {
   background: var(--color-bg-1);
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #CFC6B6;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-bright, #B6C1D1);
+  background: var(--color-border-bright, #BCB1A0);
 }
 
 /* Focus ring */
@@ -85,9 +85,9 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    #EEF1F5 0%,
-    #F7F9FB 50%,
-    #EEF1F5 100%
+    #EBE4D6 0%,
+    #F7F3E9 50%,
+    #EBE4D6 100%
   );
   background-size: 800px 100%;
   animation: shimmer 1.5s infinite linear;
@@ -107,6 +107,37 @@ body {
   animation: indeterminate 1.4s ease-in-out infinite;
 }
 
+/* Flip cards — front shows the claim, back reveals the detail on hover.
+   Tailwind 3 ships no preserve-3d / backface utilities, so these live here.
+   The reduced-motion rule further down collapses the transition, so the card
+   still turns, just without the sweep. */
+.flip-card {
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.flip-card:hover .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden; /* Safari */
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
+}
+
 /* Stagger animation delays for list items */
 .stagger-1 { animation-delay: 50ms; }
 .stagger-2 { animation-delay: 100ms; }
@@ -120,26 +151,26 @@ body {
   transition: box-shadow 200ms ease, border-color 200ms ease;
 }
 .glow-border:hover {
-  box-shadow: 0 0 0 1px rgba(36, 97, 219, 0.25), 0 18px 34px -18px rgba(15, 23, 41, 0.22);
+  box-shadow: 0 0 0 1px rgba(135, 151, 122, 0.55), 0 18px 34px -18px rgba(52, 47, 40, 0.24);
 }
 
 /* Dot grid background texture */
 .dot-grid {
-  background-image: radial-gradient(circle, rgba(15, 23, 41, 0.06) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(52, 47, 40, 0.07) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
 /* Theory / Lab pill base styles */
 .pill-theory {
-  background: #D6E2F3;
-  color: #1E3A8A;
-  border: 1px solid #B8CDEA;
+  background: #D9E2CE;
+  color: #2F4432;
+  border: 1px solid #C4CDB5;
 }
 
 .pill-lab {
-  background: #E2D7EF;
-  color: #5B21B6;
-  border: 1px solid #CBB9E2;
+  background: #EFE0C6;
+  color: #6B4F23;
+  border: 1px solid #DDC9A6;
 }
 
 /* Reduced motion */
@@ -148,5 +179,31 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* The blanket rule above collapses the flip to nothing, so the card snaps
+     between faces with no transition at all. A large 3D rotation is exactly
+     what reduce-motion is meant to suppress, so rather than forcing it back
+     the card cross-fades instead: the reveal still reads as a deliberate
+     change, without the spin. */
+  .flip-card-inner {
+    transform: none !important;
+  }
+
+  .flip-card-face {
+    transition: opacity 320ms ease !important;
+  }
+
+  .flip-card-back {
+    transform: none;
+    opacity: 0;
+  }
+
+  .flip-card:hover .flip-card-back {
+    opacity: 1;
+  }
+
+  .flip-card:hover .flip-card-front {
+    opacity: 0;
   }
 }

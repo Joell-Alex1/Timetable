@@ -33,10 +33,10 @@ export default function FailureScreen({ message, reasons = [], onRetry, loading 
     <div
       role="alert"
       aria-live="assertive"
-      className="flex flex-col items-center justify-center gap-8 rounded-2xl border border-status-danger/30 bg-bg-2 p-10 text-center animate-fade-in"
+      className="flex flex-col items-center justify-center gap-8 rounded-xl border border-status-danger/30 bg-bg-2 p-10 text-center animate-fade-in"
     >
       {/* Icon */}
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-status-danger/30 bg-status-danger/10">
+      <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-status-danger/30 bg-status-danger/10">
         <AlertTriangle size={28} className="text-status-danger" aria-hidden="true" />
       </div>
 
@@ -54,7 +54,7 @@ export default function FailureScreen({ message, reasons = [], onRetry, loading 
 
       {/* What actually went wrong */}
       <div className="w-full max-w-md rounded-xl border border-border-base bg-bg-3 p-5 text-left">
-        <p className="mb-4 text-xs font-600 uppercase tracking-widest text-text-muted">
+        <p className="mb-4 text-2xs font-600 uppercase tracking-widest text-text-muted">
           {hasReasons ? 'What went wrong' : 'Suggestions'}
         </p>
 

@@ -28,7 +28,7 @@ function Chip({ label, mono = false, busy, onRemove }) {
         ${busy ? 'opacity-40' : ''}
       `}
     >
-      <span className={mono ? 'font-mono text-xs' : ''}>{label}</span>
+      <span className={mono ? 'font-mono text-2xs' : ''}>{label}</span>
       <button
         type="button"
         onClick={onRemove}
@@ -88,21 +88,21 @@ function AddForm({ id, label, placeholder, onAdd }) {
           {saving ? 'Adding…' : 'Add'}
         </Button>
       </div>
-      {err && <p id={`${id}-err`} role="alert" className="mt-2 text-xs text-status-danger">{err}</p>}
+      {err && <p id={`${id}-err`} role="alert" className="mt-2 text-2xs text-status-danger">{err}</p>}
     </form>
   )
 }
 
 function Panel({ title, hint, count, children }) {
   return (
-    <section className="rounded-xl border border-border-base bg-bg-2 p-5">
+    <section className="rounded-xl border border-border-base bg-bg-2 p-6">
       <div className="mb-4 flex items-baseline justify-between gap-3">
         <div>
           <h2 className="font-display text-sm font-700 text-text-primary">{title}</h2>
-          <p className="text-xs text-text-muted">{hint}</p>
+          <p className="text-2xs text-text-muted">{hint}</p>
         </div>
         {count != null && (
-          <span className="font-mono text-xs text-text-muted">{count}</span>
+          <span className="font-mono text-2xs text-text-muted">{count}</span>
         )}
       </div>
       {children}
@@ -203,9 +203,9 @@ export default function ResourcesPage() {
             </div>
           )
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2 animate-fade-in">
+          <div className="grid gap-5 lg:grid-cols-2 animate-fade-in">
             <Panel title="Days" hint="Working days, in the order shown." count={timings.days.length}>
-              <ul className="flex flex-wrap gap-2" role="list">
+              <ul className="flex flex-wrap gap-2.5" role="list">
                 {timings.days.map((d) => (
                   <Chip
                     key={d}
@@ -229,7 +229,7 @@ export default function ResourcesPage() {
               hint="One-hour slots, in order. A new slot goes after the last one; labs need two neighbouring slots."
               count={timings.slots.length}
             >
-              <ul className="flex flex-wrap gap-2" role="list">
+              <ul className="flex flex-wrap gap-2.5" role="list">
                 {timings.slots.map((s) => (
                   <Chip
                     key={s}
@@ -271,13 +271,13 @@ export default function ResourcesPage() {
                   />
                 </div>
 
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-6">
                   {visibleFloors.map((floor) => (
                     <div key={floor}>
                       <p className="mb-2 text-2xs font-600 uppercase tracking-widest text-text-muted">
                         Floor {floor}
                       </p>
-                      <ul className="flex flex-wrap gap-2" role="list">
+                      <ul className="flex flex-wrap gap-2.5" role="list">
                         {visibleRooms.filter((r) => r.floor === floor).map((r) => (
                           <Chip
                             key={r.name}

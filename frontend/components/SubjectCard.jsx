@@ -61,12 +61,12 @@ export default function SubjectCard({ subject, scheduledTheory, scheduledLab, fl
           <h3 className="font-display text-base font-700 text-text-primary leading-snug">
             {subject.name}
           </h3>
-          <p className="mt-0.5 text-xs text-text-muted">
+          <p className="mt-0.5 text-2xs text-text-muted">
             {subject.theory_hours}h theory · {subject.lab_hours}h lab
           </p>
           {subject.batch && (
             <span
-              className="mt-1.5 inline-block rounded-md border px-2 py-0.5 font-mono text-2xs font-600"
+              className="mt-1.5 inline-block rounded-lg border px-2 py-0.5 font-mono text-2xs font-600"
               style={{ borderColor: palette.border, color: palette.text, background: palette.bg }}
             >
               {subject.batch}
@@ -77,7 +77,7 @@ export default function SubjectCard({ subject, scheduledTheory, scheduledLab, fl
         {/* Status + actions, grouped so neither can overlap the other */}
         <div className="flex shrink-0 items-center gap-2">
           <div
-            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-600 ${
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-2xs font-600 ${
               complete
                 ? 'border-status-success/30 bg-status-success/10 text-status-success'
                 : 'border-status-danger/30 bg-status-danger/10 text-status-danger'
@@ -130,7 +130,7 @@ export default function SubjectCard({ subject, scheduledTheory, scheduledLab, fl
           {floorList.map((f) => (
             <span
               key={f}
-              className="rounded-md border border-border-base bg-bg-3 px-2 py-0.5 font-mono text-2xs text-text-muted"
+              className="rounded-lg border border-border-base bg-bg-3 px-2 py-0.5 font-mono text-2xs text-text-muted"
             >
               Floor {f}
             </span>

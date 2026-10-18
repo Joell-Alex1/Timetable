@@ -1,6 +1,7 @@
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import ToastProvider from "../components/ToastProvider";
+import GenerateProvider from "../components/GenerateAction";
 
 // One typeface across the whole UI, matching the reference design's single
 // sans. Previously a geometric display face (Syne) sat beside a separate body
@@ -29,7 +30,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="bg-bg-0 text-text-primary font-body antialiased">
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <GenerateProvider>{children}</GenerateProvider>
+        </ToastProvider>
       </body>
     </html>
   );

@@ -87,26 +87,10 @@ export default function SchedulePage() {
           </div>
         )}
 
-        {/* Legend */}
-        {(data?.timetable || loading) && (
-          <div
-            className="mb-4 flex flex-wrap items-center gap-4 text-xs text-text-muted"
-            aria-label="Timetable legend"
-          >
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded pill-theory" aria-hidden="true" />
-              Theory session
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded pill-lab" aria-hidden="true" />
-              Lab session (2 hours)
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded border border-dashed border-border-base" aria-hidden="true" />
-              Empty slot
-            </span>
-          </div>
-        )}
+        {/* The session-type key used to live here, stacking a third control
+            row on top of the grid's own batch tabs and subject key. It now
+            sits inside the grid component so all three read as one toolbar
+            instead of three competing bands. */}
 
         {/* Timetable grid */}
         <TimetableGrid
@@ -118,7 +102,7 @@ export default function SchedulePage() {
 
         {/* Message */}
         {data?.message && (
-          <p className="mt-4 text-center text-xs text-text-muted">{data.message}</p>
+          <p className="mt-4 text-center text-2xs text-text-muted">{data.message}</p>
         )}
       </main>
     </div>

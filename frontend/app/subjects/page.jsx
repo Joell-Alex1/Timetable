@@ -43,7 +43,7 @@ function deriveScheduled(timetable) {
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-border-bright bg-bg-3 px-3 py-2 text-xs shadow-lg">
+    <div className="rounded-lg border border-border-bright bg-bg-3 px-3 py-2 text-2xs shadow-lg">
       <p className="mb-1 font-display font-700 text-text-primary">{label}</p>
       {payload.map((p) => (
         <p key={p.name} className="text-text-secondary">
@@ -57,7 +57,7 @@ function ChartTooltip({ active, payload, label }) {
 /** Skeleton loader */
 function SubjectsSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Loading subjects">
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Loading subjects">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="skeleton h-48 rounded-xl" />
       ))}
@@ -220,7 +220,7 @@ function AddSubjectForm({ onAdd, onCancel }) {
       </div>
 
       {formError && (
-        <p role="alert" className="mt-3 text-xs text-status-danger">{formError}</p>
+        <p role="alert" className="mt-3 text-2xs text-status-danger">{formError}</p>
       )}
     </form>
   )
@@ -349,7 +349,7 @@ export default function SubjectsPage() {
         {/* Bar chart */}
         {!loading && subjects && timetable && (
           <section
-            className="mb-10 rounded-xl border border-border-base bg-bg-2 p-6 animate-fade-in"
+            className="mb-10 rounded-xl border border-border-base bg-bg-2 px-6 pb-4 pt-5 animate-fade-in"
             aria-label="Session hours breakdown chart"
           >
             <div className="mb-4 flex items-center gap-2">
@@ -358,29 +358,29 @@ export default function SubjectsPage() {
                 Scheduled Hours by Subject
               </h2>
             </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData} barCategoryGap="30%">
+            <ResponsiveContainer width="100%" height={170}>
+              <BarChart data={chartData} barCategoryGap="28%" barGap={3} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
                 <XAxis
                   dataKey="name"
-                  tick={{ fill: '#475569', fontSize: 11, fontFamily: 'var(--font-jetbrains)' }}
+                  tick={{ fill: '#555148', fontSize: 11, fontFamily: 'var(--font-jetbrains)' }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: '#646C7A', fontSize: 11, fontFamily: 'var(--font-jetbrains)' }}
+                  tick={{ fill: '#676357', fontSize: 11, fontFamily: 'var(--font-jetbrains)' }}
                   axisLine={false}
                   tickLine={false}
                   width={28}
                 />
                 <RechartTooltip
                   content={<ChartTooltip />}
-                  cursor={{ fill: 'rgba(15, 23, 41, 0.04)' }}
+                  cursor={{ fill: 'rgba(52, 47, 40, 0.05)' }}
                 />
                 <Legend formatter={(value) => (
-                  <span style={{ color: '#475569', fontSize: 11 }}>{value}</span>
+                  <span style={{ color: '#555148', fontSize: 11 }}>{value}</span>
                 )} />
-                <Bar dataKey="Theory" radius={[3, 3, 0, 0]} fill="#2461DB" />
-                <Bar dataKey="Lab"    radius={[3, 3, 0, 0]} fill="#7C3AED" />
+                <Bar dataKey="Theory" radius={[3, 3, 0, 0]} maxBarSize={26} fill="#34483A" />
+                <Bar dataKey="Lab"    radius={[3, 3, 0, 0]} maxBarSize={26} fill="#9B7B60" />
               </BarChart>
             </ResponsiveContainer>
           </section>
@@ -391,7 +391,7 @@ export default function SubjectsPage() {
           <SubjectsSkeleton />
         ) : subjects?.length > 0 ? (
           <div
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
             role="list"
             aria-label="Subject cards"
           >
