@@ -221,7 +221,7 @@ function Tooltip({ entry, palette }) {
       "
       style={{ borderColor: palette.border }}
     >
-      <p className="font-display text-xs font-700 text-text-primary leading-snug mb-1">
+      <p className="font-display text-2xs font-700 text-text-primary leading-snug mb-1">
         {entry.subject}
       </p>
       <div className="flex flex-col gap-1">
@@ -251,7 +251,7 @@ function SessionCell({ entry, palette, rowSpan = 1, nav, row, col }) {
     <td
       rowSpan={rowSpan}
       role="gridcell"
-      className="relative p-1 align-top"
+      className="relative p-1.5 align-top"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onFocus={() => setHovered(true)}
@@ -263,15 +263,15 @@ function SessionCell({ entry, palette, rowSpan = 1, nav, row, col }) {
         onKeyDown={(e) => nav?.handleKeyDown(e, row, col)}
         aria-label={`${entry.subject} — ${entry.type} in ${entry.room}, Floor ${entry.floor}`}
         className="
-          relative flex h-full min-h-[52px] w-full cursor-default flex-col
-          justify-between rounded-lg border p-2
+          relative flex h-full min-h-[58px] w-full cursor-default flex-col
+          justify-between rounded-lg border p-2.5
           transition-all duration-150 hover:brightness-110
           focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent
         "
         style={{
           background: palette.bg,
           borderColor: palette.border,
-          minHeight: rowSpan > 1 ? '108px' : '52px',
+          minHeight: rowSpan > 1 ? '116px' : '58px',
         }}
       >
         <div className="flex items-center justify-between gap-1">
@@ -286,7 +286,7 @@ function SessionCell({ entry, palette, rowSpan = 1, nav, row, col }) {
           </span>
         </div>
         <span
-          className="mt-0.5 inline-flex w-fit items-center rounded-sm border px-1.5 py-0.5 font-mono text-2xs text-text-muted"
+          className="mt-0.5 inline-flex w-fit items-center rounded-lg border px-1.5 py-0.5 font-mono text-2xs text-text-muted"
           style={{ borderColor: 'rgba(15, 23, 41, 0.12)', background: 'rgba(15, 23, 41, 0.04)' }}
         >
           F{entry.floor}
@@ -299,9 +299,9 @@ function SessionCell({ entry, palette, rowSpan = 1, nav, row, col }) {
 
 function EmptyCell({ colSpan = 1 }) {
   return (
-    <td colSpan={colSpan} role="gridcell" className="p-1 align-top">
+    <td colSpan={colSpan} role="gridcell" className="p-1.5 align-top">
       <div
-        className="flex h-full min-h-[52px] w-full items-center justify-center rounded-lg border border-dashed border-border-base"
+        className="flex h-full min-h-[58px] w-full items-center justify-center rounded-lg border border-dashed border-border-base"
         aria-label="Empty slot"
       />
     </td>
@@ -347,7 +347,7 @@ function SingleBatchGrid({ grid, subjectColorMap, days, slots }) {
           <tr className="border-b border-border-base bg-bg-2">
             <th scope="col" className="sticky left-0 z-20 bg-bg-2 py-3 px-3 text-left font-mono text-2xs font-500 text-text-muted uppercase tracking-widest">Time</th>
             {days.map((day) => (
-              <th key={day} scope="col" className="py-3 px-2 text-center font-display text-xs font-700 text-text-secondary uppercase tracking-wide">
+              <th key={day} scope="col" className="py-3.5 px-2 text-center font-display text-2xs font-700 text-text-secondary uppercase tracking-wide">
                 <span className="hidden sm:inline">{day}</span>
                 <span className="sm:hidden">{shortDay(day)}</span>
               </th>
@@ -431,7 +431,7 @@ function AllBatchesGrid({ timetable, batches, subjectColorMap, days, slots }) {
               <th
                 key={day}
                 colSpan={batches.length}
-                className="py-2 px-2 text-center font-display text-xs font-700 text-text-secondary uppercase tracking-wide border-r border-border-dim"
+                className="py-2 px-2 text-center font-display text-2xs font-700 text-text-secondary uppercase tracking-wide border-r border-border-dim"
               >
                 <span className="hidden sm:inline">{day}</span>
                 <span className="sm:hidden">{shortDay(day)}</span>
@@ -478,14 +478,14 @@ function AllBatchesGrid({ timetable, batches, subjectColorMap, days, slots }) {
 
                   if (!cell) return (
                     <td key={`${day}-${batch}`} className={`p-1 align-top ${isLastBatch ? 'border-r border-border-dim' : ''}`}>
-                      <div className="flex h-full min-h-[52px] w-full items-center justify-center rounded-lg border border-dashed border-border-base" />
+                      <div className="flex h-full min-h-[58px] w-full items-center justify-center rounded-lg border border-dashed border-border-base" />
                     </td>
                   )
 
                   const visible = cell.entries.filter((e) => !cell.skipRender.has(`${e.subject}::${e.room}`))
                   if (visible.length === 0) return (
                     <td key={`${day}-${batch}`} className={`p-1 align-top ${isLastBatch ? 'border-r border-border-dim' : ''}`}>
-                      <div className="flex h-full min-h-[52px] w-full items-center justify-center rounded-lg border border-dashed border-border-base" />
+                      <div className="flex h-full min-h-[58px] w-full items-center justify-center rounded-lg border border-dashed border-border-base" />
                     </td>
                   )
 
@@ -532,7 +532,7 @@ function AllBatchCell({ entry, palette, rowSpan, nav, row, col }) {
       onKeyDown={(e) => nav?.handleKeyDown(e, row, col)}
       aria-label={`${entry.subject} — ${entry.type} in ${entry.room}`}
       className="relative flex h-full w-full cursor-default flex-col justify-between rounded-lg border p-2 transition-all duration-150 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-      style={{ background: palette.bg, borderColor: palette.border, minHeight: rowSpan > 1 ? '108px' : '52px' }}
+      style={{ background: palette.bg, borderColor: palette.border, minHeight: rowSpan > 1 ? '116px' : '58px' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onFocus={() => setHovered(true)}
@@ -553,7 +553,7 @@ function AllBatchCell({ entry, palette, rowSpan, nav, row, col }) {
           className="absolute bottom-full left-1/2 z-50 mb-2 w-48 -translate-x-1/2 rounded-lg border border-border-bright bg-bg-4 p-3 shadow-lg pointer-events-none animate-fade-in text-left"
           style={{ borderColor: palette.border }}
         >
-          <p className="font-display text-xs font-700 text-text-primary mb-1">{entry.subject}</p>
+          <p className="font-display text-2xs font-700 text-text-primary mb-1">{entry.subject}</p>
           {entry.batch && <div className="flex justify-between"><span className="text-2xs text-text-muted">Batch</span><span className="text-2xs text-text-secondary">{entry.batch}</span></div>}
           <div className="flex justify-between"><span className="text-2xs text-text-muted">Room</span><span className="font-mono text-2xs text-text-secondary">{entry.room}</span></div>
           <div className="flex justify-between"><span className="text-2xs text-text-muted">Floor</span><span className="text-2xs text-text-secondary">Floor {entry.floor}</span></div>
@@ -576,20 +576,44 @@ function SubjectLegend({ subjects, subjectColorMap }) {
   if (subjects.length === 0) return null
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="Subject colour key">
-      {subjects.map((subject) => {
-        const palette = PALETTES[subjectColorMap[subject] ?? hashSubject(subject)]
-        return (
-          <span key={subject} className="flex items-center gap-1.5 text-xs text-text-secondary">
-            <span
-              className="inline-block h-3 w-3 shrink-0 rounded-sm border"
-              style={{ background: palette.bg, borderColor: palette.border }}
-              aria-hidden="true"
-            />
-            {subject}
-          </span>
-        )
-      })}
+    <div
+      className="flex flex-col gap-2 lg:items-end"
+      aria-label="Timetable key"
+    >
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 lg:justify-end">
+        {subjects.map((subject) => {
+          const palette = PALETTES[subjectColorMap[subject] ?? hashSubject(subject)]
+          return (
+            <span key={subject} className="flex items-center gap-1.5 text-2xs text-text-secondary">
+              <span
+                className="inline-block h-3 w-3 shrink-0 rounded-lg border"
+                style={{ background: palette.bg, borderColor: palette.border }}
+                aria-hidden="true"
+              />
+              {subject}
+            </span>
+          )
+        })}
+      </div>
+
+      {/* Session types, folded in here rather than occupying a band of their own */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-2xs text-text-muted lg:justify-end">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-lg pill-theory" aria-hidden="true" />
+          Theory
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-lg pill-lab" aria-hidden="true" />
+          Lab (2 hours)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-lg border border-dashed border-border-bright"
+            aria-hidden="true"
+          />
+          Free
+        </span>
+      </div>
     </div>
   )
 }
@@ -650,36 +674,39 @@ export default function TimetableGrid({ timetable, loading = false, days, slots 
 
   return (
     <div>
-      {/* Batch filter tabs */}
-      {batches.length > 1 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2" role="tablist" aria-label="Filter by batch">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={activeBatch === tab}
-              onClick={() => setSelectedBatch(tab)}
-              className={`
-                rounded-lg border px-3 py-1.5 font-mono text-xs font-600 transition-all duration-150 cursor-pointer
-                focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent
-                ${activeBatch === tab
-                  ? 'border-accent/50 bg-accent/15 text-accent'
-                  : 'border-border-base bg-bg-2 text-text-muted hover:border-border-bright hover:text-text-secondary'}
-              `}
-            >
-              {tab === 'All' ? 'All Batches' : tab}
-            </button>
-          ))}
-          {activeBatch === 'All' && batches.length > 0 && (
-            <span className="ml-1 text-xs text-text-muted">
-              — every batch side by side; wide
-            </span>
-          )}
-        </div>
-      )}
+      {/* One toolbar: the filter on the left, the keys on the right. Three
+          separate bands of chrome above the grid read as clutter; grouped and
+          given room to breathe they read as a single control strip. */}
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        {batches.length > 1 && (
+          <div
+            className="flex flex-wrap items-center gap-2"
+            role="tablist"
+            aria-label="Filter by batch"
+          >
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeBatch === tab}
+                onClick={() => setSelectedBatch(tab)}
+                className={`
+                  rounded-lg border px-3.5 py-2 text-2xs font-600 transition-all duration-150 cursor-pointer
+                  focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent
+                  ${activeBatch === tab
+                    ? 'border-accent/40 bg-accent-soft text-accent'
+                    : 'border-border-base bg-bg-2 text-text-muted hover:border-border-bright hover:text-text-secondary'}
+                `}
+              >
+                {tab === 'All' ? 'All batches' : tab}
+              </button>
+            ))}
+          </div>
+        )}
 
-      <SubjectLegend subjects={visibleSubjects} subjectColorMap={subjectColorMap} />
+        <SubjectLegend subjects={visibleSubjects} subjectColorMap={subjectColorMap} />
+      </div>
 
       {/* Grid */}
       {activeBatch === 'All' && batches.length > 1

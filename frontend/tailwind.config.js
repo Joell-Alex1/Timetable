@@ -8,59 +8,68 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Light surface scale. 0 is the page, 1–2 are cards (white, lifted by
-        // a border and a soft shadow rather than a fill), 3–4 are recessed
-        // areas such as inputs and table headers.
+        // Warm earth surfaces. Page is Warm Cream, cards Soft Ivory, so cards
+        // lift off the page without needing a heavy border.
         bg: {
-          0: '#F9FAFB',
-          1: '#FFFFFF',
-          2: '#FFFFFF',
-          3: '#F3F4F6',
-          4: '#E9EDF2',
+          0: '#F5F0E6',   // Warm Cream — page
+          1: '#FFFCF6',   // Soft Ivory — cards and modals
+          2: '#FFFCF6',
+          3: '#EDE7DA',   // recessed — derived between cream and Warm Stone
+          4: '#E5D8C5',   // Oat Beige
         },
-        // Borders carry the structure on a light page, where there is no dark
-        // ground to separate surfaces. These are deliberately a step darker
-        // than the reference's values: at #F1F5F9 on a #F9FAFB page a hairline
-        // measures 1.05:1 and is simply not there.
+        // Warm Stone is the stated divider. At 1.28:1 on cream it reads as a
+        // quiet rule but cannot carry structure alone, so `bright` (a deeper
+        // stone) exists for borders that must be seen — empty timetable
+        // slots, hover states.
         border: {
-          dim: '#E5E7EB',     // row dividers, hairlines
-          base: '#D8DFE8',    // card + input borders, empty slots
-          bright: '#B6C1D1',  // hover, emphasis
+          dim: '#EDE7DB',     // hairlines, row dividers
+          base: '#DDD5C8',    // Warm Stone — cards, inputs, dividers
+          bright: '#BCB1A0',  // structural borders, hover, emphasis
         },
-        // Three-step hierarchy, each clearing WCAG AA (4.5:1) on every light
-        // surface. Note `muted` is one step darker than the #6B7280 this
-        // palette is modelled on: that value measures 4.39:1 on #F9FAFB and
-        // fails AA, so matching it exactly would mean copying an
-        // accessibility defect.
+        // Dark Espresso carries the main text. Taupe Grey (#797469) measures
+        // 4.09:1 on ivory and misses AA, so the muted step keeps its hue but
+        // is pulled one stop darker.
         text: {
-          primary: '#0F1729',   // worst case 16.24:1
-          secondary: '#475569', // worst case  6.89:1
-          muted: '#646C7A',     // worst case  4.81:1
+          primary: '#342F28',   // Dark Espresso — 11.68:1 on cream
+          secondary: '#555148', //  6.96:1 — body copy
+          muted: '#676357',     //  5.28:1 — labels, hints
         },
-        // Semantic status colours — red error/destructive, green success,
-        // amber warning, blue info. Re-picked for light surfaces: the previous
-        // pastels were tuned for a near-black background and measured below
-        // 1.8:1 here.
+        // Semantic status colours, re-struck in the warm family. All clear AA
+        // on both cream and ivory while staying recognisably red/green/amber/blue.
         status: {
-          danger:  '#CC1F1F',   // 5.04:1
-          success: '#15803D',   // 4.56:1
-          warning: '#B45309',   // 4.56:1
-          info:    '#1D4ED8',   // 6.09:1
+          danger:  '#96352A',   // 6.51:1
+          success: '#35603D',   // 6.39:1
+          warning: '#8A5A22',   // 5.18:1
+          info:    '#33506B',   // 7.39:1
         },
         accent: {
-          DEFAULT: '#2461DB',
-          dim: '#1D4ED8',
-          glow: 'rgba(36, 97, 219, 0.12)',
+          DEFAULT: '#34483A',       // Deep Forest Green — white on it is 9.84:1
+          // Muted Sage (#87977A) is a mid-tone: nothing readable sits on it
+          // (white 3.12, Dark Espresso 4.26), so it is used for borders and
+          // decoration rather than as a button fill. Hover lifts the forest
+          // instead, keeping the white label.
+          hover: '#45604C',         // 6.93:1 with white
+          sage: '#87977A',          // Muted Sage — decorative, borders, charts
+          soft: '#C4CDB5',          // Pale Sage — tinted panels
+          glow: 'rgba(52, 72, 58, 0.18)',
+        },
+        // Attention/priority fill. Muted Mocha is too mid-tone for a label
+        // (2.77:1 on oat), so the badge is an Oat Beige fill with a deeper
+        // mocha text.
+        priority: {
+          DEFAULT: '#E5D8C5',
+          text: '#5E4530',          // 6.31:1 on the fill
+          mocha: '#9B7B60',         // Muted Mocha — fills and accents only
         },
         theory: {
-          bg: '#D6E2F3',
-          border: '#B8CDEA',
-          text: '#1E3A8A',
+          bg: '#D9E2CE',
+          border: '#C4CDB5',
+          text: '#2F4432',          // 7.88:1
         },
         lab: {
-          bg: '#E2D7EF',
-          border: '#CBB9E2',
-          text: '#5B21B6',
+          bg: '#EFE0C6',
+          border: '#DDC9A6',
+          text: '#6B4F23',          // 5.83:1
         },
       },
       fontSize: {
@@ -76,18 +85,18 @@ module.exports = {
       },
       backgroundImage: {
         'grid-pattern': `
-          linear-gradient(rgba(15, 23, 41, 0.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(15, 23, 41, 0.04) 1px, transparent 1px)
+          linear-gradient(rgba(52, 47, 40, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(52, 47, 40, 0.05) 1px, transparent 1px)
         `,
       },
       backgroundSize: {
         'grid-sm': '24px 24px',
       },
       boxShadow: {
-        'glow-sm': '0 4px 12px -4px rgba(36, 97, 219, 0.35)',
-        'glow-md': '0 9px 16px -7px rgba(36, 97, 219, 0.40)',
-        'card': '0 1px 2px rgba(15, 23, 41, 0.04), 0 4px 24px -4px rgba(15, 23, 41, 0.06)',
-        'card-hover': '0 18px 34px -18px rgba(15, 23, 41, 0.22)',
+        'glow-sm': '0 4px 12px -4px rgba(52, 72, 58, 0.30)',
+        'glow-md': '0 9px 16px -7px rgba(52, 72, 58, 0.35)',
+        'card': '0 1px 2px rgba(52, 47, 40, 0.05), 0 4px 24px -4px rgba(52, 47, 40, 0.08)',
+        'card-hover': '0 18px 34px -18px rgba(52, 47, 40, 0.24)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',

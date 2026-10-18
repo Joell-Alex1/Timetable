@@ -69,14 +69,14 @@ export default function StaleBanner({ refreshKey = 0, onRegenerated }) {
             This timetable is out of date
           </p>
           {status.changes?.length > 0 && (
-            <ul className="mt-1 flex flex-col gap-0.5 text-xs text-text-secondary">
+            <ul className="mt-1 flex flex-col gap-0.5 text-2xs text-text-secondary">
               {status.changes.slice(0, 4).map((c) => <li key={c}>· {c}</li>)}
               {status.changes.length > 4 && (
                 <li>· and {status.changes.length - 4} more change(s)</li>
               )}
             </ul>
           )}
-          {error && <p className="mt-2 text-xs text-status-danger">{error}</p>}
+          {error && <p className="mt-2 text-2xs text-status-danger">{error}</p>}
         </div>
       </div>
 

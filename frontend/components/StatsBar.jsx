@@ -61,10 +61,10 @@ export default function StatsBar({ stats, unusedRooms, loading = false }) {
           />
 
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-soft">
               <Icon size={14} className="text-accent" aria-hidden="true" />
             </div>
-            <span className="text-xs font-medium text-text-secondary">{label}</span>
+            <span className="text-2xs font-medium text-text-secondary">{label}</span>
           </div>
 
           {loading ? (

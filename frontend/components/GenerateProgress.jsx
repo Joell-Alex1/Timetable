@@ -32,7 +32,7 @@ export default function GenerateProgress({ problem }) {
       className="mb-10 overflow-hidden rounded-xl border border-accent/30 bg-bg-2 animate-fade-in"
     >
       <div className="flex items-center gap-4 p-5">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/10">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-accent/15 bg-accent-soft">
           <Cpu size={18} className="text-accent animate-pulse-slow" aria-hidden="true" />
         </div>
 
@@ -40,7 +40,7 @@ export default function GenerateProgress({ problem }) {
           <p className="text-sm font-600 text-text-primary">
             Searching for a conflict-free arrangement…
           </p>
-          <p className="mt-0.5 text-xs text-text-muted">
+          <p className="mt-0.5 text-2xs text-text-muted">
             {problem
               ? `${problem.subjects} subjects · ${problem.rooms} rooms · ${problem.days} days × ${problem.slots} slots`
               : 'Working through the constraints'}

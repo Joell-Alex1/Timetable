@@ -2,7 +2,14 @@
 
 import { Cpu, RefreshCw } from 'lucide-react'
 
-export default function GenerateButton({ onClick, loading = false, label = 'Generate Schedule' }) {
+export default function GenerateButton({
+  onClick,
+  loading = false,
+  label = 'Generate Schedule',
+  // `tone` lets a surface with its own palette (the cream hero) restyle the
+  // button without every other caller changing. Default keeps the app accent.
+  tone = 'bg-accent hover:bg-accent-hover hover:text-text-primary focus-visible:outline-accent',
+}) {
   return (
     <button
       type="button"
@@ -14,10 +21,10 @@ export default function GenerateButton({ onClick, loading = false, label = 'Gene
         group relative inline-flex items-center gap-2.5 overflow-hidden
         rounded-xl px-7 py-3.5 font-display text-sm font-700 tracking-wide
         transition-all duration-200 cursor-pointer
-        focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2
+        focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
         ${loading
-          ? 'bg-accent/20 text-accent/60 cursor-not-allowed'
-          : 'bg-accent text-white hover:bg-accent/90 hover:shadow-glow-md active:scale-[0.98]'
+          ? 'bg-text-muted/30 text-white/70 cursor-not-allowed'
+          : `${tone} text-white hover:shadow-glow-md active:scale-[0.98]`
         }
       `}
     >

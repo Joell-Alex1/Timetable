@@ -19,7 +19,7 @@ const VARIANTS = {
   // Primary action — one per screen, carries the strongest visual weight.
   primary: `
     bg-accent text-white border border-transparent
-    hover:bg-accent/90 hover:shadow-glow-sm active:scale-[0.98]
+    hover:bg-accent-hover hover:text-text-primary hover:shadow-glow-sm active:scale-[0.98]
   `,
   // Default action.
   secondary: `

@@ -37,7 +37,7 @@ export default function Field({
 
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-      <label htmlFor={id} className="text-xs font-500 text-text-secondary">
+      <label htmlFor={id} className="text-2xs font-500 text-text-secondary">
         {label}
         {required && <span className="ml-0.5 text-status-danger" aria-hidden="true">*</span>}
       </label>

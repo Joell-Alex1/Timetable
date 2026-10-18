@@ -48,7 +48,7 @@ function RoomCard({ room, occupancy }) {
   if (!info) {
     return (
       <div
-        className="flex flex-col gap-1 rounded-lg border border-dashed border-border-base bg-bg-3/60 p-2.5"
+        className="flex flex-col gap-1 rounded-lg border border-dashed border-border-bright bg-bg-3/50 p-3"
         aria-label={`${room} — unused`}
       >
         <span className="font-mono text-2xs font-500 text-text-muted">{room}</span>
@@ -59,7 +59,7 @@ function RoomCard({ room, occupancy }) {
 
   return (
     <div
-      className="flex flex-col gap-1 rounded-lg border p-2.5 transition-all duration-150 hover:brightness-110 glow-border"
+      className="flex flex-col gap-1 rounded-lg border p-3 transition-all duration-150 hover:brightness-110 glow-border"
       style={{ background: palette.bg, borderColor: palette.border }}
       title={info.subjects.join(', ')}
       aria-label={`${room} — ${info.subjects.join(', ')}; ${sessionCount} session${sessionCount !== 1 ? 's' : ''}`}
@@ -111,12 +111,12 @@ function FloorAccordion({ floor, crRooms, clRooms, defaultOpen, roomSummary, occ
         "
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/10 border border-accent/20">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-soft border border-accent/15">
             <Building2 size={14} className="text-accent" aria-hidden="true" />
           </div>
           <div className="text-left">
             <p className="font-display text-sm font-700 text-text-primary">Floor {floor}</p>
-            <p className="text-xs text-text-muted">
+            <p className="text-2xs text-text-muted">
               {usedTheory}/{crRooms.length} theory rooms · {usedLab}/{clRooms.length} lab rooms
             </p>
           </div>
@@ -124,7 +124,7 @@ function FloorAccordion({ floor, crRooms, clRooms, defaultOpen, roomSummary, occ
 
         <div className="flex items-center gap-3">
           {/* Utilisation pills */}
-          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border-base bg-bg-3 px-3 py-1 text-xs text-text-secondary">
+          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border-base bg-bg-3 px-3 py-1 text-2xs text-text-secondary">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
             {usedTheory + usedLab} active
           </span>
@@ -140,16 +140,16 @@ function FloorAccordion({ floor, crRooms, clRooms, defaultOpen, roomSummary, occ
       {open && (
         <div
           id={`floor-${floor}-content`}
-          className="border-t border-border-dim bg-bg-1 p-5"
+          className="border-t border-border-dim bg-bg-1 p-6"
           role="region"
           aria-label={`Floor ${floor} rooms`}
         >
           {/* Theory rooms */}
-          <div className="mb-6">
+          <div className="mb-7">
             <p className="mb-3 text-2xs font-600 uppercase tracking-widest text-text-muted">
               Theory Rooms (CR) — {usedTheory}/{crRooms.length} in use
             </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {crRooms.map((r) => (
                 <RoomCard key={r} room={r} occupancy={occupancy} />
               ))}
@@ -161,7 +161,7 @@ function FloorAccordion({ floor, crRooms, clRooms, defaultOpen, roomSummary, occ
             <p className="mb-3 text-2xs font-600 uppercase tracking-widest text-text-muted">
               Lab Rooms (CL) — {usedLab}/{clRooms.length} in use
             </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {clRooms.map((r) => (
                 <RoomCard key={r} room={r} occupancy={occupancy} />
               ))}
@@ -200,7 +200,7 @@ export default function FloorMap({ timetable, roomSummary, rooms = [], loading =
 
   return (
     <div
-      className="flex flex-col gap-3 animate-fade-in"
+      className="flex flex-col gap-4 animate-fade-in"
       role="region"
       aria-label="Floor-wise room map"
     >
